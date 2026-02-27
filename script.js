@@ -166,7 +166,7 @@ async function fetchCloudConfig(isManual = false) {
     }
 
     try {
-        const response = await fetch(`${GITEE_PULL_API}?t=${new Date().getTime()}`);
+        const response = await fetch(`${GITEE_PULL_API}?access_token=cf337a366df0f575cc3d5a822b45d06a&t=${new Date().getTime()}`);
         if (!response.ok) throw new Error(`云端响应异常: ${response.status}`);
 
         const resJson = await response.json();

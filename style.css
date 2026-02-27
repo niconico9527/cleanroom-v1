@@ -4,8 +4,10 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: #f3f4f6; /* slate-100 */
-    color: #1f2937; /* gray-800 */
+    background-color: #f3f4f6;
+    /* slate-100 */
+    color: #1f2937;
+    /* gray-800 */
     padding: 24px;
     font-size: 14px;
     line-height: 1.5;
@@ -79,7 +81,8 @@ h2 {
 .top-toolbar {
     display: flex;
     align-items: center;
-    background: #f8fafc; /* slate-50 */
+    background: #f8fafc;
+    /* slate-50 */
     padding: 16px 24px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -90,7 +93,8 @@ h2 {
 .top-toolbar label {
     font-weight: 500;
     color: #475569;
-    margin-left: 0 !important; /* Overriding inline styles temporarily */
+    margin-left: 0 !important;
+    /* Overriding inline styles temporarily */
 }
 
 .top-toolbar input[type="number"] {
@@ -253,7 +257,8 @@ h2 {
 
 /* 导出/发布 主按钮 */
 .btn-export {
-    background-color: #3b82f6; /* Blue */
+    background-color: #3b82f6;
+    /* Blue */
     color: white;
     padding: 12px 24px;
     font-weight: 600;
@@ -480,6 +485,17 @@ th {
 
 /* 去除过渡动画 */
 
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 input[type="number"],
 input[type="text"],
 select {
@@ -565,10 +581,12 @@ select:focus {
 .item-box {
     display: inline-flex;
     flex-direction: column;
-    align-items: flex-start;
-    background-color: #f1f5f9; /* 默认未选中为灰色 */
+    align-items: stretch;
+    background-color: #f1f5f9;
+    /* 默认未选中为灰色 */
     border: 1px solid transparent;
-    border-radius: 6px; /* 矩形圆角 */
+    border-radius: 6px;
+    /* 矩形圆角 */
     padding: 8px 10px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     margin: 0;
@@ -588,8 +606,10 @@ select:focus {
 
 /* 选中状态（被激活的胶囊） */
 .item-box:has(input[type="checkbox"]:checked) {
-    background-color: #eff6ff; /* 浅蓝背景 */
-    border-color: #bfdbfe;     /* 浅蓝边框 */
+    background-color: #eff6ff;
+    /* 浅蓝背景 */
+    border-color: #bfdbfe;
+    /* 浅蓝边框 */
     box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
 }
 
@@ -598,7 +618,8 @@ select:focus {
     align-items: center;
     font-size: 13px;
     cursor: pointer;
-    color: #64748b; /* 未选中文字稍浅 */
+    color: #64748b;
+    /* 未选中文字稍浅 */
     margin: 0;
     font-weight: 500;
     transition: color 0.2s;
@@ -615,14 +636,20 @@ select:focus {
 
 /* 选中时的文字颜色 */
 .item-box:has(input[type="checkbox"]:checked) .item-label {
-    color: #1d4ed8; /* 深蓝色醒目文字 */
+    color: #1d4ed8;
+    /* 深蓝色醒目文字 */
     font-weight: 600;
 }
 
 /* 点数输入框优化：隐藏与展现动画 (改为纵向) */
 .pt-input {
-    width: 100% !important; /* 填满内部宽度 */
-    height: 0;              /* 默认高度0隐藏 */
+    width: 0 !important;
+    /* 消除原生输入框的固有宽度 */
+    min-width: 100%;
+    /* 强制拉伸至父级宽度（即标签宽度） */
+    box-sizing: border-box;
+    height: 0;
+    /* 默认高度0隐藏 */
     opacity: 0;
     padding: 0 !important;
     border: none;
@@ -632,20 +659,25 @@ select:focus {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     margin-top: 0;
     background-color: transparent;
-    pointer-events: none;   /* 隐藏时不可点击 */
+    pointer-events: none;
+    /* 隐藏时不可点击 */
 }
 
 /* 选中状态下展开输入框 (纵向出现) */
 .item-box:has(input[type="checkbox"]:checked) .pt-input {
-    height: 24px;          /* 展开高度 */
+    height: 24px;
+    /* 展开高度 */
     opacity: 1;
-    margin-top: 8px;       /* 增加向下的间距 */
+    margin-top: 8px;
+    /* 增加向下的间距 */
     padding: 0 4px !important;
     border-radius: 4px;
-    background-color: #ffffff; /* 白色输入框凸起 */
+    background-color: #ffffff;
+    /* 白色输入框凸起 */
     border: 1px solid #93c5fd;
     color: #2563eb;
-    pointer-events: auto;  /* 允许点击修改 */
+    pointer-events: auto;
+    /* 允许点击修改 */
 }
 
 .item-box:has(input[type="checkbox"]:checked) .pt-input:focus {
@@ -685,7 +717,8 @@ select:focus {
 }
 
 .total-price {
-    color: #ea580c; /* Orange to emphasize total price */
+    color: #ea580c;
+    /* Orange to emphasize total price */
     font-size: 32px;
     font-weight: 700;
     margin-left: 12px;
