@@ -173,8 +173,67 @@ function saveAdminPrices() {
     alert(`【${level}】 的阶梯单价配置已成功保存！`);
 }
 
-function copyToAllLevels() {
-    if (!confirm("确定要将当前界面的价格配置，批量覆盖到所有级别的配置中吗？")) return;
+// === 新版高级分类复制弹窗 ===
+const levelGroups = [
+    { name: "🔢 国际 ISO 标准", keys: ["5级", "6级", "7级", "8级", "9级"] },
+    { name: "🏭 国标常规/旧版", keys: ["100级", "1000级", "10000级", "100000级", "300000级"] },
+    { name: "💊 GMP 医药及生安", keys: ["A级", "B级", "C级", "D级"] },
+    { name: "🏥 医院手术室专用", keys: ["I级", "II级", "III级", "IV级"] }
+];
+
+function openCopyModal() {
+    const currentLvl = document.getElementById('adminClassLevel').value;
+    document.getElementById('copyModal').style.display = 'flex';
+    document.getElementById('chkAllLevels').checked = false;
+
+    const container = document.getElementById('levelGroupsContainer');
+    container.innerHTML = '';
+
+    levelGroups.forEach(grp => {
+        let groupHtml = `<div class="lvl-group">
+            <div class="lvl-group-title">
+                <span>${grp.name}</span>
+                <label style="font-weight:normal; font-size:12px; cursor:pointer; color:#3b82f6;"><input type="checkbox" onchange="toggleGroupModalLevels(this, '${grp.name}')"> 此组全选</label>
+            </div>
+            <div class="lvl-grid" data-group="${grp.name}">`;
+
+        grp.keys.forEach(k => {
+            let isCurrent = (k === currentLvl);
+            let disabledStr = isCurrent ? 'disabled' : '';
+            let textStr = isCurrent ? `<span style="color:#94a3b8; font-style:italic;">${k} (当前)</span>` : k;
+            groupHtml += `<label class="lvl-label"><input type="checkbox" class="chk-modal-lvl" value="${k}" ${disabledStr}> ${textStr}</label>`;
+        });
+        groupHtml += `</div></div>`;
+        container.innerHTML += groupHtml;
+    });
+}
+
+function closeCopyModal() {
+    document.getElementById('copyModal').style.display = 'none';
+}
+
+function toggleAllModalLevels(cb) {
+    document.querySelectorAll('.chk-modal-lvl:not(:disabled)').forEach(input => input.checked = cb.checked);
+    document.querySelectorAll('.lvl-group-title input[type="checkbox"]').forEach(input => input.checked = cb.checked);
+}
+
+function toggleGroupModalLevels(cb, groupName) {
+    const grid = document.querySelector(`.lvl-grid[data-group="${groupName}"]`);
+    if (grid) {
+        grid.querySelectorAll('.chk-modal-lvl:not(:disabled)').forEach(input => input.checked = cb.checked);
+    }
+}
+
+function executeCopy() {
+    const checkedBoxes = document.querySelectorAll('.chk-modal-lvl:checked:not(:disabled)');
+    if (checkedBoxes.length === 0) {
+        alert("请至少选择一个目标级别！");
+        return;
+    }
+
+    const currentLvl = document.getElementById('adminClassLevel').value;
+    const targetLevels = Array.from(checkedBoxes).map(cb => cb.value);
+
     let allPrices = getSystemPrices();
     let sourceConfig = {};
     testItems.forEach(item => {
@@ -184,9 +243,17 @@ function copyToAllLevels() {
             pAbove: parseFloat(document.getElementById(`pa_${item.key}`).value) || 0
         };
     });
-    combinedLevels.forEach(l => { allPrices[l] = JSON.parse(JSON.stringify(sourceConfig)); });
+
+    // 关键修复：在覆盖其他级别前，现将当前级别的最新修改更新到总配置中
+    allPrices[currentLvl] = JSON.parse(JSON.stringify(sourceConfig));
+
+    targetLevels.forEach(l => {
+        allPrices[l] = JSON.parse(JSON.stringify(sourceConfig));
+    });
+
     localStorage.setItem('cleanroomPricesV10', JSON.stringify(allPrices));
-    alert("已成功复制到所有级别！");
+    closeCopyModal();
+    alert(`当前规则已保存，并成功复制到 ${targetLevels.length} 个其它级别中！`);
 }
 
 function handleStandardChange() {

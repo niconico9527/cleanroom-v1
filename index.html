@@ -111,8 +111,8 @@
                 <div class="admin-header">
                     <label>配置目标级别：</label>
                     <select id="adminClassLevel" onchange="loadAdminPricesToUI()"></select>
-                    <button class="btn btn-warning" onclick="copyToAllLevels()"
-                        style="margin-left: 15px;">一键将此配置复制到所有级别</button>
+                    <button class="btn btn-warning" onclick="openCopyModal()" style="margin-left: 15px;">⚙️
+                        复制当前配置到其它级别...</button>
                 </div>
 
                 <p style="color: #c0392b; font-size: 13px;">请先选择上方的【级别】，下方表格将显示该级别专属的报价方案。输入第一行数据后可使用“向下填充”按钮快速录入。</p>
@@ -142,6 +142,24 @@
 
     <!-- 顶层气泡提示容器 -->
     <div id="toast-container"></div>
+
+    <!-- 复制配置的高级弹窗 -->
+    <div id="copyModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <h3>复制配置到特定级别</h3>
+            <div class="modal-select-all">
+                <label style="cursor: pointer;"><input type="checkbox" id="chkAllLevels"
+                        onchange="toggleAllModalLevels(this)"> <b style="color: #2563eb;">全选所有级别</b></label>
+            </div>
+            <div class="level-groups" id="levelGroupsContainer">
+                <!-- 由 JavaScript 动态生成分组 -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="closeCopyModal()">取消</button>
+                <button class="btn btn-success" onclick="executeCopy()">确认应用</button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
