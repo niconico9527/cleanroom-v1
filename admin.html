@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>洁净系统底价管理后台</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+
+        .container {
+            max-width: 900px;
+            margin-top: 40px;
+        }
+
+        .top-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .top-banner h2 {
+            border: none;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="top-banner">
+            <h2>⚙️ 洁净检测 - 阶梯单价管理中心</h2>
+            <div>
+                <input type="file" id="adminPriceUpload" accept=".crm,.json" style="display: none;"
+                    onchange="importAdminEncryptedConfig(event)">
+                <button class="btn btn-warning" onclick="document.getElementById('adminPriceUpload').click()">🔄
+                    载入并二次编辑已有配置</button>
+                <button class="btn btn-export" style="margin-left: 10px;" onclick="exportEncryptedConfig()">📥
+                    导出加密价格文件与分发</button>
+            </div>
+        </div>
+
+        <div class="admin-panel" id="moduleAdmin">
+            <div class="admin-header">
+                <label>配置目标级别：</label>
+                <select id="adminClassLevel" onchange="loadAdminPricesToUI()"></select>
+                <button class="btn btn-warning" onclick="openCopyModal()" style="margin-left: 15px;">⚙️
+                    复制当前配置到其它级别...</button>
+            </div>
+
+            <p style="color: #c0392b; font-size: 13px;">操作指南：首先选择上方的【级别】，下方表格将显示该级别对应的单点底价方案。输入第一行数据后可使用“向下填充”按钮快速录入。
+            </p>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>检测项目</th>
+                        <th>
+                            阈值点数（分界点）<br>
+                            <button class="th-btn-small" onclick="fillDownColumn('th')">向下填充</button>
+                        </th>
+                        <th>
+                            阈值单价以内（元/点）<br>
+                            <button class="th-btn-small" onclick="fillDownColumn('pb')">向下填充</button>
+                        </th>
+                        <th>
+                            超阈值单价（元/点）<br>
+                            <button class="th-btn-small" onclick="fillDownColumn('pa')">向下填充</button>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="adminPriceBody">
+                </tbody>
+            </table>
+
+            <div style="margin-top: 25px; text-align: right;">
+                <button class="btn btn-success" style="font-size: 16px; padding: 12px 35px;"
+                    onclick="saveAdminPrices()">💾 暂存在本电脑中</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 复制配置的高级弹窗 -->
+    <div id="copyModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <h3>复制配置到特定级别</h3>
+            <div class="modal-select-all">
+                <label style="cursor: pointer;"><input type="checkbox" id="chkAllLevels"
+                        onchange="toggleAllModalLevels(this)"> <b style="color: #2563eb;">全选所有级别</b></label>
+            </div>
+            <div class="level-groups" id="levelGroupsContainer">
+                <!-- 由 JavaScript 动态生成分组 -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="closeCopyModal()">取消</button>
+                <button class="btn btn-success" onclick="executeCopy()">确认应用</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>

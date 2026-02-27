@@ -1,4 +1,4 @@
-const ADMIN_PASSWORD = "0501";
+// 移除明文后门密码，目前是纯净物理隔离版本
 
 const regularItems = [
     { key: 'particle', name: '悬浮粒子', isMicro: false }, { key: 'pressure', name: '静压差', isMicro: false },
@@ -37,7 +37,13 @@ const basisOptions = [
 
 window.onload = function () {
     initBasisCheckboxes();
-    initAdminLevelSelect();
+
+    // 检查是否有本地缓存配置
+    const saved = localStorage.getItem('cleanroomPricesV10');
+    if (!saved) {
+        document.getElementById('currentConfigStatus').innerHTML = "⚠️ <b>尚未导入价格库！请联系管理员获取 .crm 价格配置包</b>";
+        document.getElementById('currentConfigStatus').style.color = "#dc2626";
+    }
 
     // 启动时优先恢复草稿箱数据
     const restored = restoreDraft();
@@ -78,35 +84,8 @@ function getCheckedBasis(boxId) {
     return results.join('\n');
 }
 
-function initAdminLevelSelect() {
-    const adminSelect = document.getElementById('adminClassLevel');
-    adminSelect.innerHTML = "";
-    combinedLevels.forEach(lvl => {
-        const opt = document.createElement('option');
-        opt.value = lvl; opt.text = lvl;
-        adminSelect.appendChild(opt);
-    });
-}
-
-function switchTab(tab) {
-    if (tab === 'admin') {
-        const pwd = prompt("请输入管理员密码：");
-        if (pwd !== ADMIN_PASSWORD) {
-            alert("密码错误，拒绝访问！"); return;
-        }
-        document.getElementById('tabSales').classList.remove('active');
-        document.getElementById('tabAdmin').classList.add('active');
-        document.getElementById('moduleSales').classList.remove('active');
-        document.getElementById('moduleAdmin').classList.add('active');
-        loadAdminPricesToUI();
-    } else {
-        document.getElementById('tabAdmin').classList.remove('active');
-        document.getElementById('tabSales').classList.add('active');
-        document.getElementById('moduleAdmin').classList.remove('active');
-        document.getElementById('moduleSales').classList.add('active');
-        calculateAll();
-    }
-}
+// ====== 管理员 UI 逻辑已剥离至 admin.html 和 admin.js ======
+// 此文件现在仅包含存粹的客户端业务逻辑
 
 function buildDefaultPrices() {
     let defaultData = {};
@@ -129,132 +108,54 @@ function getSystemPrices() {
     return buildDefaultPrices();
 }
 
-function loadAdminPricesToUI() {
-    const level = document.getElementById('adminClassLevel').value;
-    const allPrices = getSystemPrices();
-    const currentConfig = allPrices[level];
-    const tbody = document.getElementById('adminPriceBody');
-    tbody.innerHTML = '';
+// ====== 全新的离线价格包反混淆导入引擎 ======
+function handleImportPrices(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-    testItems.forEach(item => {
-        const config = currentConfig[item.key];
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><b>${item.name}</b></td>
-            <td><input type="number" id="th_${item.key}" value="${config.threshold}"></td>
-            <td><input type="number" id="pb_${item.key}" value="${config.pBelow}"></td>
-            <td><input type="number" id="pa_${item.key}" value="${config.pAbove}"></td>
-        `;
-        tbody.appendChild(tr);
-    });
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const fileContent = e.target.result;
+
+            // 进行 Base64 解码和 URI 解码反混淆
+            const rawJsonString = decodeURIComponent(atob(fileContent));
+            const parsedData = JSON.parse(rawJsonString);
+
+            // 安全校验文件指纹
+            if (parsedData.sign !== "CLEANROOM_CONFIG_X1" || !parsedData.data) {
+                alert("导入失败：该文件并非有效的洁净室价格配置包，或者版本不兼容。");
+                return;
+            }
+
+            const importTime = new Date(parsedData.timestamp).toLocaleString();
+
+            // 写入本地全局缓存覆盖
+            localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
+
+            // UI 反馈
+            const statusEl = document.getElementById('currentConfigStatus');
+            if (statusEl) {
+                statusEl.innerHTML = `✅ 已载入配置（文件时间：${importTime}）`;
+                statusEl.style.color = "#10b981";
+            }
+
+            alert(`🎉 价格解包成功！系统已全局运用最新单价！`);
+
+            // 如果页面上有正在编辑的房间草稿，用最新的价格无缝重算一遍
+            calculateAll();
+
+        } catch (error) {
+            alert("导入异常：文件读取失败或数据损坏！请确保导入的是管理员下发的 .crm 价格配置包。");
+            console.error(error);
+        } finally {
+            event.target.value = '';
+        }
+    };
+    reader.readAsText(file);
 }
 
-function fillDownColumn(prefix) {
-    const firstInput = document.getElementById(`${prefix}_${testItems[0].key}`);
-    if (!firstInput) return;
-    const fillValue = firstInput.value;
-    testItems.forEach(item => {
-        const input = document.getElementById(`${prefix}_${item.key}`);
-        if (input) input.value = fillValue;
-    });
-}
 
-function saveAdminPrices() {
-    const level = document.getElementById('adminClassLevel').value;
-    let allPrices = getSystemPrices();
-    testItems.forEach(item => {
-        allPrices[level][item.key] = {
-            threshold: parseInt(document.getElementById(`th_${item.key}`).value) || 0,
-            pBelow: parseFloat(document.getElementById(`pb_${item.key}`).value) || 0,
-            pAbove: parseFloat(document.getElementById(`pa_${item.key}`).value) || 0
-        };
-    });
-    localStorage.setItem('cleanroomPricesV10', JSON.stringify(allPrices));
-    alert(`【${level}】 的阶梯单价配置已成功保存！`);
-}
-
-// === 新版高级分类复制弹窗 ===
-const levelGroups = [
-    { name: "🔢 国际 ISO 标准", keys: ["5级", "6级", "7级", "8级", "9级"] },
-    { name: "🏭 国标常规/旧版", keys: ["100级", "1000级", "10000级", "100000级", "300000级"] },
-    { name: "💊 GMP 医药及生安", keys: ["A级", "B级", "C级", "D级"] },
-    { name: "🏥 医院手术室专用", keys: ["I级", "II级", "III级", "IV级"] }
-];
-
-function openCopyModal() {
-    const currentLvl = document.getElementById('adminClassLevel').value;
-    document.getElementById('copyModal').style.display = 'flex';
-    document.getElementById('chkAllLevels').checked = false;
-
-    const container = document.getElementById('levelGroupsContainer');
-    container.innerHTML = '';
-
-    levelGroups.forEach(grp => {
-        let groupHtml = `<div class="lvl-group">
-            <div class="lvl-group-title">
-                <span>${grp.name}</span>
-                <label style="font-weight:normal; font-size:12px; cursor:pointer; color:#3b82f6;"><input type="checkbox" onchange="toggleGroupModalLevels(this, '${grp.name}')"> 此组全选</label>
-            </div>
-            <div class="lvl-grid" data-group="${grp.name}">`;
-
-        grp.keys.forEach(k => {
-            let isCurrent = (k === currentLvl);
-            let disabledStr = isCurrent ? 'disabled' : '';
-            let textStr = isCurrent ? `<span style="color:#94a3b8; font-style:italic;">${k} (当前)</span>` : k;
-            groupHtml += `<label class="lvl-label"><input type="checkbox" class="chk-modal-lvl" value="${k}" ${disabledStr}> ${textStr}</label>`;
-        });
-        groupHtml += `</div></div>`;
-        container.innerHTML += groupHtml;
-    });
-}
-
-function closeCopyModal() {
-    document.getElementById('copyModal').style.display = 'none';
-}
-
-function toggleAllModalLevels(cb) {
-    document.querySelectorAll('.chk-modal-lvl:not(:disabled)').forEach(input => input.checked = cb.checked);
-    document.querySelectorAll('.lvl-group-title input[type="checkbox"]').forEach(input => input.checked = cb.checked);
-}
-
-function toggleGroupModalLevels(cb, groupName) {
-    const grid = document.querySelector(`.lvl-grid[data-group="${groupName}"]`);
-    if (grid) {
-        grid.querySelectorAll('.chk-modal-lvl:not(:disabled)').forEach(input => input.checked = cb.checked);
-    }
-}
-
-function executeCopy() {
-    const checkedBoxes = document.querySelectorAll('.chk-modal-lvl:checked:not(:disabled)');
-    if (checkedBoxes.length === 0) {
-        alert("请至少选择一个目标级别！");
-        return;
-    }
-
-    const currentLvl = document.getElementById('adminClassLevel').value;
-    const targetLevels = Array.from(checkedBoxes).map(cb => cb.value);
-
-    let allPrices = getSystemPrices();
-    let sourceConfig = {};
-    testItems.forEach(item => {
-        sourceConfig[item.key] = {
-            threshold: parseInt(document.getElementById(`th_${item.key}`).value) || 0,
-            pBelow: parseFloat(document.getElementById(`pb_${item.key}`).value) || 0,
-            pAbove: parseFloat(document.getElementById(`pa_${item.key}`).value) || 0
-        };
-    });
-
-    // 关键修复：在覆盖其他级别前，现将当前级别的最新修改更新到总配置中
-    allPrices[currentLvl] = JSON.parse(JSON.stringify(sourceConfig));
-
-    targetLevels.forEach(l => {
-        allPrices[l] = JSON.parse(JSON.stringify(sourceConfig));
-    });
-
-    localStorage.setItem('cleanroomPricesV10', JSON.stringify(allPrices));
-    closeCopyModal();
-    alert(`当前规则已保存，并成功复制到 ${targetLevels.length} 个其它级别中！`);
-}
 
 function handleStandardChange() {
     const std = document.getElementById('standardSelect').value;
