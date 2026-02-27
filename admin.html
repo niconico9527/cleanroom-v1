@@ -48,7 +48,7 @@
                         style="font-weight: 600; color: #1d4ed8; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 6px;">
                         <i class="ph ph-cloud-check"></i> 云端发布与同步区
                     </div>
-                    <div style="display: flex; gap: 12px;">
+                    <div style="display: flex; gap: 12px; margin-bottom: 10px;">
                         <button class="btn" style="background-color: #3b82f6; color: white; padding: 10px 16px;"
                             onclick="adminPullFromCloud()"><i class="ph ph-cloud-arrow-down"
                                 style="font-size: 16px; margin-right: 4px;"></i> 拉取云端数据</button>
@@ -56,6 +56,11 @@
                             style="padding: 10px 16px; border: 1px solid #10b981;" onclick="pushToCloud()"><i
                                 class="ph ph-rocket-launch" style="font-size: 16px; margin-right: 4px;"></i>
                             发布至云端</button>
+                    </div>
+                    <div id="currentConfigStatus"
+                        style="font-size: 13px; color: #10b981; display: flex; align-items: center; gap: 4px;">
+                        <i class="ph-fill ph-check-circle"></i>
+                        当前状态：已使用本地系统缓存价格库
                     </div>
                 </div>
 

@@ -36,7 +36,39 @@ window.onload = function () {
     });
 
     loadAdminPricesToUI();
+    
+    // 初始化显示当前数据版本状态
+    updateConfigStatus();
 };
+
+// 更新配置状态显示
+function updateConfigStatus() {
+    const statusEl = document.getElementById('currentConfigStatus');
+    if (!statusEl) return;
+    
+    const meta = localStorage.getItem('cleanroomPricesV10_Meta');
+    if (meta) {
+        try {
+            const metaData = JSON.parse(meta);
+            const time = new Date(metaData.timestamp).toLocaleString();
+            statusEl.innerHTML = `<i class="ph-fill ph-check-circle"></i> 🟢 已连接云端，当前数据版本：${time}`;
+            statusEl.style.color = "#10b981";
+        } catch (e) {
+            statusEl.innerHTML = `<i class="ph-fill ph-info"></i> 🟠 当前使用系统缓存单价`;
+            statusEl.style.color = "#f59e0b";
+        }
+    } else {
+        // 检查是否有本地价格数据
+        const saved = localStorage.getItem('cleanroomPricesV10');
+        if (saved) {
+            statusEl.innerHTML = `<i class="ph-fill ph-hard-drive"></i> 🟠 当前使用本地缓存单价（未同步云端）`;
+            statusEl.style.color = "#f59e0b";
+        } else {
+            statusEl.innerHTML = `<i class="ph-fill ph-warning-circle"></i> ⚠️ <b>尚未接入系统！请拉取云端数据或导入离线包</b>`;
+            statusEl.style.color = "#dc2626";
+        }
+    }
+}
 
 function buildDefaultPrices() {
     let defaultData = {};
@@ -232,13 +264,23 @@ function importAdminEncryptedConfig(event) {
                 alert("导入失败：非本平台派发的有效价格配置包。");
                 return;
             }
+// 直接覆写本地 Admin 全局配置
+localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
 
-            // 直接覆写本地 Admin 全局配置
-            localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
+// 如果有时间戳，也保存到 Meta
+if (parsedData.timestamp) {
+    localStorage.setItem('cleanroomPricesV10_Meta', JSON.stringify({ timestamp: parsedData.timestamp }));
+} else {
+    // 清除云端同步标记，表示这是本地导入的数据
+    localStorage.removeItem('cleanroomPricesV10_Meta');
+}
 
-            // 刷新UI
-            loadAdminPricesToUI();
+// 刷新UI和状态
+loadAdminPricesToUI();
+updateConfigStatus();
 
+const importTime = parsedData.timestamp ? new Date(parsedData.timestamp).toLocaleString() : '未知时间';
+alert(`✅ 已成功解析并导入价格包！\n文件时间：${importTime}\n现在您可以基于它在此继续二次编辑。`);
             alert(`✅ 已成功解析并导入您选择的旧版价格包！现在您可以基于它在此继续二次编辑。`);
 
         } catch (error) {
@@ -294,7 +336,9 @@ async function adminPullFromCloud() {
 
         if (parsedData.sign === "CLEANROOM_CONFIG_X1" && parsedData.data) {
             localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
+            localStorage.setItem('cleanroomPricesV10_Meta', JSON.stringify({ timestamp: parsedData.timestamp }));
             loadAdminPricesToUI();
+            updateConfigStatus(); // 更新状态显示
             showToast("成功从 Gitee 拉取最新云端配置覆盖本地！", "success");
         } else {
             throw new Error("云端数据签名校验失败或格式错误。");
@@ -353,8 +397,7 @@ async function pushToCloud() {
         });
 
         if (response.ok) {
-            showToast("成功！全网基准价已发布到云端，客户端将自动同步！", "success");
-            alert("🚀 发布成功！全国各地的业务员下次打开系统时，都会瞬间自动应用您最新配置的底层价格！");
+            showToast("数据上传成功");
         } else {
             const errData = await response.json();
             alert("❌ 同步云端失败，请检查网络或 Gitee 仓库配置：\n" + (errData.message || "未知异常"));
@@ -363,7 +406,7 @@ async function pushToCloud() {
         alert("网络请求被拦截，可能是无外网环境或跨域阻断。请检查您的网络连接。");
     } finally {
         document.getElementById('btnCloudPush').disabled = false;
-        document.getElementById('btnCloudPush').innerHTML = "🚀 一键发布全网基准价到云端";
+        document.getElementById('btnCloudPush').innerHTML = "🚀 一键发布到云端";
     }
 }
 
