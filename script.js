@@ -388,7 +388,9 @@ function addRoom(importName = '', importLevel = '', importArea = '') {
     });
     levelSelectHtml += `</select>`;
 
-    let regularHtml = `<div class="item-row regular-row"><span class="row-label">[常规项目]</span>`;
+    let regularHtml = `<div class="item-row regular-row">
+        <span class="row-label">常规项目</span>
+        <div class="items-grid">`;
     regularItems.forEach(item => {
         let isMicro = item.isMicro ? 'cell-microbio' : '';
         regularHtml += `
@@ -401,9 +403,11 @@ function addRoom(importName = '', importLevel = '', importArea = '') {
             </div>
         `;
     });
-    regularHtml += `</div>`;
+    regularHtml += `</div></div>`;
 
-    let specialHtml = `<div class="item-row special-row"><span class="row-label">[特殊项目]</span>`;
+    let specialHtml = `<div class="item-row special-row">
+        <span class="row-label">特殊项目</span>
+        <div class="items-grid">`;
     specialItems.forEach(item => {
         let isMicro = item.isMicro ? 'cell-microbio' : '';
         specialHtml += `
@@ -416,7 +420,7 @@ function addRoom(importName = '', importLevel = '', importArea = '') {
             </div>
         `;
     });
-    specialHtml += `</div>`;
+    specialHtml += `</div></div>`;
 
     tr.innerHTML = `
         <td><input type="text" class="room-name" value="${defaultName}"></td>
