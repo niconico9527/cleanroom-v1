@@ -3,10 +3,9 @@
  * --------------------------------------------------- */
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f3f4f6;
-    /* 更柔和的高级灰底色 */
-    color: #1f2937;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f4f5f7;
+    color: #333333;
     padding: 20px;
     font-size: 14px;
 }
@@ -15,10 +14,9 @@ body {
     max-width: 1500px;
     margin: 0 auto;
     background: #ffffff;
-    padding: 24px 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    /* 更弥散、更高级的阴影 */
+    padding: 30px;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
 }
 
 /* 导航标签 */
@@ -72,14 +70,14 @@ h2 {
     border-radius: 8px;
 }
 
-/* 顶部工具栏：去除了生硬的边框，采用极浅的灰蓝底色 */
+/* 顶部工具栏 */
 .top-toolbar {
     display: flex;
     align-items: center;
-    background: #f8fafc;
+    background: #f8f9fa;
     padding: 16px 20px;
-    border-radius: 8px;
-    border-left: 4px solid #3b82f6;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
 }
 
 .top-toolbar input[type="number"] {
@@ -124,32 +122,28 @@ h2 {
     display: block;
     margin-bottom: 6px;
     cursor: pointer;
-    color: #374151;
+    color: #24292e;
     font-size: 13px;
     padding: 4px 6px;
-    transition: 0.2s;
-    border-radius: 4px;
 }
 
 .multi-select-box label:hover {
-    background-color: #f3f4f6;
+    background-color: #f4f5f7;
 }
 
 .multi-select-box input[type="checkbox"] {
     margin-right: 8px;
     vertical-align: middle;
     cursor: pointer;
-    accent-color: #2563eb;
 }
 
 .basis-custom-txt {
-    border: 1px solid #d1d5db;
+    border: 1px solid #d1d5da;
     padding: 6px;
-    border-radius: 4px;
     font-size: 12px;
     margin-left: 5px;
     outline: none;
-    transition: 0.2s;
+    background-color: #ffffff;
 }
 
 .basis-custom-txt:focus {
@@ -157,7 +151,7 @@ h2 {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
-/* 操作栏 */
+/* === 操作栏 === */
 .action-bar {
     display: flex;
     align-items: center;
@@ -165,92 +159,81 @@ h2 {
     background: #ffffff;
     padding: 12px 0;
     margin-top: 16px;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid #e1e4e8;
 }
 
-/* === 核心优化：按钮矩阵重构 === */
+/* === 极简扁平化按钮系统 === */
 .btn {
-    border: none;
+    border: 1px solid transparent;
     padding: 8px 16px;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 13px;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
     font-weight: 500;
 }
 
-/* 添加按钮：沉稳的翡翠绿 */
+/* 添加按钮 */
 .btn-success {
-    background-color: #10b981;
-    color: white;
-    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+    background-color: #ffffff;
+    color: #24292e;
+    border-color: #d1d5da;
 }
 
 .btn-success:hover {
-    background-color: #059669;
-    transform: translateY(-1px);
+    background-color: #f3f4f6;
 }
 
-/* 导入按钮：明快的青蓝色 */
+/* 导入/拉取 按钮 */
 .btn-import {
-    background-color: #0ea5e9;
-    color: white;
-    border: none;
+    background-color: #f8f9fa;
+    color: #24292e;
+    border: 1px solid #d1d5da;
     padding: 8px 16px;
-    font-weight: 500;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: 0.2s;
     margin-left: 12px;
-    box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
 }
 
 .btn-import:hover {
-    background-color: #0284c7;
-    transform: translateY(-1px);
+    background-color: #e1e4e8;
 }
 
-/* 导出按钮：高级靛蓝色，不再是死黑 */
+/* 导出/发布 主按钮：稳重的深灰色 */
 .btn-export {
-    background-color: #4f46e5;
+    background-color: #3f4752;
     color: white;
-    border: none;
     padding: 10px 20px;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: 0.2s;
-    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
 }
 
 .btn-export:hover {
-    background-color: #4338ca;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(79, 70, 229, 0.3);
+    background-color: #24292e;
 }
 
-/* 幽灵删除按钮：极其关键的降噪优化（浅红底+深红字），不刺眼 */
+/* 幽灵删除按钮：极简线框 */
 .btn-danger {
-    background-color: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fca5a5;
+    background-color: transparent;
+    color: #d73a49;
+    border: 1px solid #d73a49;
     padding: 6px 12px;
 }
 
 .btn-danger:hover {
-    background-color: #fee2e2;
-    color: #b91c1c;
-    border-color: #f87171;
-}
-
-/* 其他小按钮 */
-.btn-warning {
-    background-color: #f59e0b;
+    background-color: #d73a49;
     color: white;
 }
 
+.btn-warning {
+    background-color: #fdf6e3;
+    color: #b58900;
+    border: 1px solid #eee8d5;
+}
+
 .btn-warning:hover {
-    background-color: #d97706;
+    background-color: #eee8d5;
 }
 
 .btn-small {
@@ -277,35 +260,28 @@ h2 {
     border-color: #fff;
 }
 
-/* 表格全局优化：更通透的设计 */
+/* 表格全局极简优化 */
 table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
+    border-collapse: collapse;
     margin-top: 15px;
     font-size: 13px;
+    border: 1px solid #e1e4e8;
 }
 
 th,
 td {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e1e4e8;
     padding: 10px 8px;
     text-align: center;
     vertical-align: middle;
 }
 
 th {
-    background-color: #3b82f6;
-    color: white;
+    background-color: #f4f5f7;
+    color: #24292e;
     white-space: nowrap;
-    font-weight: 500;
-}
-
-/* 只有表格外部的边框带有细微圆角，现代感拉满 */
-table {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden;
+    font-weight: 600;
 }
 
 /* === 核心交互优化：表格悬浮高亮、明细折叠及撤销弹窗 === */
@@ -348,16 +324,14 @@ table {
 
 .toast-msg {
     pointer-events: auto;
-    background: #334155;
+    background: #3f4752;
     color: white;
     padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 14px;
-    animation: slideInRight 0.3s forwards;
+    font-size: 13px;
     transition: opacity 0.3s;
 }
 
@@ -377,35 +351,24 @@ table {
     background: #059669;
 }
 
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
+/* 去除过渡动画 */
 
 input[type="number"],
 input[type="text"],
 select {
     padding: 8px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
+    border: 1px solid #d1d5da;
+    border-radius: 2px;
     font-size: 13px;
     outline: none;
-    transition: 0.2s;
-    color: #374151;
+    color: #24292e;
+    background-color: #ffffff;
 }
 
 input[type="number"]:focus,
 input[type="text"]:focus,
 select:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    border-color: #0366d6;
 }
 
 .room-area {
@@ -464,17 +427,15 @@ select:focus {
     flex-direction: column;
     align-items: center;
     background-color: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border: 1px solid #e1e4e8;
+    border-radius: 2px;
     padding: 8px 10px;
     margin-right: 10px;
     margin-bottom: 8px;
-    transition: 0.2s;
 }
 
 .item-box:hover {
-    border-color: #93c5fd;
-    background-color: #eff6ff;
+    border-color: #0366d6;
 }
 
 .item-label {
@@ -482,40 +443,38 @@ select:focus {
     align-items: center;
     font-size: 12px;
     cursor: pointer;
-    color: #4b5563;
+    color: #24292e;
     margin-bottom: 8px;
 }
 
 .item-label input[type="checkbox"] {
     margin-right: 4px;
     cursor: pointer;
-    accent-color: #3b82f6;
 }
 
-/* 点数输入框优化：更柔和的虚实对比 */
+/* 点数输入框优化：极简平滑 */
 .pt-input {
     width: 45px;
     text-align: center;
-    border-radius: 4px;
+    border-radius: 2px;
     padding: 4px;
     font-size: 13px;
     font-weight: 600;
 }
 
 .auto-point {
-    border: 1px dashed #9ca3af;
-    color: #9ca3af;
+    border: 1px dashed #d1d5da;
+    color: #6a737d;
     font-style: italic;
     background-color: transparent;
 }
 
-/* 手动锁定状态：温柔的琥珀色，不再是刺眼的橘红 */
+/* 手动锁定状态：深灰色提醒替代突兀黄色 */
 .manual-point {
-    border: 1px solid #f59e0b;
-    color: #b45309;
+    border: 1px solid #24292e;
+    color: #24292e;
     font-style: normal;
-    background-color: #fffbeb;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    background-color: #f4f5f7;
 }
 
 /* 总计金额块 */
@@ -524,32 +483,31 @@ select:focus {
     font-weight: 600;
     text-align: right;
     padding: 20px;
-    background: #f8fafc;
-    border-radius: 8px;
+    background: #f8f9fa;
+    border-radius: 2px;
     margin-top: 24px;
-    border: 1px solid #e2e8f0;
-    color: #475569;
+    border: 1px solid #e1e4e8;
+    color: #24292e;
 }
 
 .total-price {
-    color: #dc2626;
-    font-size: 28px;
+    color: #3f4752;
+    font-size: 24px;
     margin-left: 10px;
-    font-family: 'Courier New', Courier, monospace;
 }
 
 .room-total-text {
-    color: #dc2626;
+    color: #3f4752;
     font-weight: bold;
-    font-size: 15px;
+    font-size: 14px;
 }
 
-/* 管理员后台统一为冷静的灰蓝色调，摒弃之前的土黄色 */
+/* 扁平化管理员面板 */
 .admin-panel {
-    background: #f8fafc;
+    background: #ffffff;
     padding: 24px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border-radius: 2px;
+    border: 1px solid #e1e4e8;
 }
 
 .admin-header {
@@ -593,22 +551,19 @@ select:focus {
 
 .modal-content {
     background: #ffffff;
-    border-radius: 12px;
+    border-radius: 2px;
     width: 600px;
     max-width: 95%;
     padding: 24px 30px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid #e1e4e8;
 }
 
 @keyframes popIn {
     from {
-        transform: scale(0.95);
         opacity: 0;
     }
 
     to {
-        transform: scale(1);
         opacity: 1;
     }
 }
@@ -616,8 +571,8 @@ select:focus {
 .modal-content h3 {
     margin-top: 0;
     margin-bottom: 20px;
-    color: #0f172a;
-    border-bottom: 2px solid #f1f5f9;
+    color: #24292e;
+    border-bottom: 1px solid #e1e4e8;
     padding-bottom: 12px;
     font-size: 18px;
 }
@@ -647,21 +602,21 @@ select:focus {
 }
 
 .lvl-group {
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border: 1px solid #e1e4e8;
+    border-radius: 2px;
     padding: 12px 15px;
-    background: #f8fafc;
+    background: #f8f9fa;
 }
 
 .lvl-group-title {
     font-weight: 600;
     font-size: 14px;
-    color: #475569;
+    color: #24292e;
     margin-bottom: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e1e4e8;
     padding-bottom: 8px;
 }
 
@@ -678,19 +633,15 @@ select:focus {
     font-size: 13px;
     cursor: pointer;
     padding: 6px 8px;
-    border-radius: 6px;
-    transition: 0.2s;
     border: 1px solid transparent;
 }
 
 .lvl-label:hover {
     background: #ffffff;
-    border-color: #cbd5e1;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border-color: #d1d5da;
 }
 
 .lvl-label input[type="checkbox"] {
-    accent-color: #2563eb;
     cursor: pointer;
 }
 
