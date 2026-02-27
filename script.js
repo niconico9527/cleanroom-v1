@@ -203,7 +203,7 @@ async function fetchCloudConfig(isManual = false) {
             }
 
             const importTime = new Date(parsedData.timestamp).toLocaleString();
-            statusEl.innerHTML = `🟢 已连接云端，当前单价基准版本：${importTime}`;
+            statusEl.innerHTML = `🟢 已连接云端，当前数据版本：${importTime}`;
             statusEl.style.color = "#10b981";
         } else {
             throw new Error("云端数据签名校验失败或格式错误。");

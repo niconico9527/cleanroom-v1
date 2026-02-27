@@ -240,7 +240,7 @@ h2 {
     padding: 4px 8px;
     font-size: 12px;
     margin-top: 4px;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .th-btn-small {
@@ -248,16 +248,16 @@ h2 {
     font-size: 11px;
     margin-top: 6px;
     background-color: rgba(255, 255, 255, 0.15);
-    color: #fff;
+    color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 4px;
+    border-radius: 2px;
     cursor: pointer;
-    transition: 0.2s;
+    transition: background-color 0.2s, border-color 0.2s;
 }
 
 .th-btn-small:hover {
     background-color: rgba(255, 255, 255, 0.3);
-    border-color: #fff;
+    border-color: #ffffff;
 }
 
 /* 表格全局极简优化 */
@@ -278,8 +278,8 @@ td {
 }
 
 th {
-    background-color: #f4f5f7;
-    color: #24292e;
+    background-color: #64748b;
+    color: #ffffff;
     white-space: nowrap;
     font-weight: 600;
 }
@@ -299,16 +299,16 @@ th {
     font-size: 11px;
     margin-top: 6px;
     background-color: rgba(255, 255, 255, 0.15);
-    color: #fff;
+    color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 4px;
+    border-radius: 2px;
     cursor: pointer;
-    transition: 0.2s;
+    transition: background-color 0.2s, border-color 0.2s;
 }
 
 .btn-toggle-collapse:hover {
     background-color: rgba(255, 255, 255, 0.3);
-    border-color: #fff;
+    border-color: #ffffff;
 }
 
 #toast-container {

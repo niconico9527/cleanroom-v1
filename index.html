@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>洁净室自动报价系统</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -45,7 +46,8 @@
                         title="1.0为原价，0.8为8折，1.2为上浮20%" style="width: 50px; text-align: center; border-color: #c0392b;">
 
                     <button class="btn btn-danger" onclick="clearAllData()"
-                        style="margin-left: auto; padding: 6px 15px; font-weight: bold;">🗑️ 一键清空</button>
+                        style="margin-left: auto; padding: 6px 15px; font-weight: bold;"><i class="ph ph-trash"></i>
+                        一键清空</button>
                 </div>
 
                 <div class="basis-wrapper">
@@ -63,35 +65,45 @@
                 <div
                     style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; margin-top: 20px; display: flex; align-items: center; justify-content: space-between;">
                     <div>
-                        <strong style="color: #4b5563; font-size: 15px;">💰 核心计价神经中枢</strong>
-                        <div id="currentConfigStatus" style="font-size: 13px; color: #10b981; margin-top: 6px;">🟢
-                            当前状态：已使用本地系统缓存价格库</div>
+                        <strong
+                            style="color: #24292e; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i
+                                class="ph ph-calculator" style="font-size: 18px;"></i> 当前数据：</strong>
+                        <div id="currentConfigStatus"
+                            style="font-size: 13px; color: #10b981; margin-top: 6px; display: flex; align-items: center; gap: 4px;">
+                            <i class="ph-fill ph-check-circle"></i>
+                            当前状态：已使用本地系统缓存价格库
+                        </div>
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center;">
                         <button class="btn btn-primary"
-                            style="background-color: #3b82f6; color: white; padding: 10px 20px;"
-                            onclick="manualFetchCloudConfig()">🌐 手动同步云端最新价格</button>
+                            style="background-color: #3f4752; color: white; padding: 10px 20px;"
+                            onclick="manualFetchCloudConfig()"><i class="ph ph-cloud-arrow-down"
+                                style="font-size: 16px; margin-right: 4px;"></i> 同步云端数据</button>
                         <input type="file" id="priceUpload" accept=".crm,.json" style="display: none;"
                             onchange="handleImportPrices(event)">
                         <button class="btn btn-import" style="padding: 10px 20px; margin-left: 0;"
-                            onclick="document.getElementById('priceUpload').click()">🔄 从本地加载公司最新价格数据 (*.crm)</button>
+                            onclick="document.getElementById('priceUpload').click()"><i class="ph ph-folder-arrow-down"
+                                style="font-size: 16px; margin-right: 4px;"></i> 本地加载数据 (*.crm)</button>
                     </div>
                 </div>
 
                 <div class="action-bar">
                     <div style="display: flex; align-items: center;">
-                        <button class="btn btn-success" onclick="addRoom()">+ 添加房间</button>
+                        <button class="btn btn-success" onclick="addRoom()"><i class="ph ph-plus"
+                                style="font-weight: bold;"></i> 添加房间</button>
 
                         <input type="file" id="importExcelInput" style="display: none;" accept=".xlsx, .xls, .csv"
                             onchange="handleImportExcel(event)">
-                        <button class="btn-import" onclick="document.getElementById('importExcelInput').click()">📤
+                        <button class="btn-import" onclick="document.getElementById('importExcelInput').click()"><i
+                                class="ph ph-file-xls"></i>
                             一键导入</button>
 
                         <a href="javascript:void(0);" onclick="downloadImportTemplate()"
                             style="margin-left: 12px; font-size: 13px; color: #3498db; text-decoration: underline;">下载模板</a>
                     </div>
 
-                    <button class="btn-export" onclick="exportToExcel()">📥 导出报价单</button>
+                    <button class="btn-export" onclick="exportToExcel()"><i class="ph ph-download-simple"
+                            style="font-size: 15px; margin-right: 4px;"></i> 导出报价单</button>
                 </div>
 
                 <table id="roomTable">
@@ -99,9 +111,10 @@
                         <tr>
                             <th style="width: 90px;">房间名称</th>
                             <th style="width: 110px;">洁净度等级<br><button class="th-btn-small"
-                                    onclick="fillDownRoomLevel()">↓ 向下填充</button></th>
+                                    onclick="fillDownRoomLevel()"><i class="ph ph-arrow-down"></i> 向下填充</button></th>
                             <th style="width: 70px;">面积(m²)</th>
-                            <th>检测项目与点数配置<br><button class="btn-toggle-collapse" onclick="toggleAllRoomsCollapse()">↕️
+                            <th>检测项目与点数配置<br><button class="btn-toggle-collapse" onclick="toggleAllRoomsCollapse()"><i
+                                        class="ph ph-arrows-in-line-vertical"></i>
                                     展开/折叠所有明细</button></th>
                             <th style="width: 110px;">房间总报价</th>
                             <th style="width: 60px;">操作</th>
