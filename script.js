@@ -1,103 +1,746 @@
-/**
- * 洁净室检测点数综合计算主函数
- * @param {string} standard - 执行标准 (例如: 'GB16292旧版', 'GB50591')
- * @param {number} area - 房间面积 (平方米)
- * @param {string|number} cleanLevel - 洁净度级别 (例如: 100, 10000, 100000, 300000)
- * @param {string} projectType - 检测项目名称 (例如: '悬浮粒子', '风量', '静压差' 等)
- * @returns {number} 最终的采样点数量
- */
-function calculateCleanroomPoints(standard, area, cleanLevel, projectType) {
-    // 数据预处理：确保传进来的面积是数字，级别是整数，防止代码报错
-    const numArea = parseFloat(area) || 0;
-    const numLevel = parseInt(cleanLevel, 10);
+const ADMIN_PASSWORD = "0501";
 
-    // ==========================================
-    // 新增：GB 16292 旧版 特殊逻辑拦截
-    // ==========================================
-    if (standard === 'GB16292旧版') {
-        
-        // 【逻辑1】悬浮粒子、浮游菌、沉降菌 —— 直接查表
-        const microbialProjects = ['悬浮粒子', '洁净度', '浮游菌', '沉降菌'];
-        if (microbialProjects.includes(projectType)) {
-            return getGB16292TablePoints(numArea, numLevel);
+const regularItems = [
+    { key: 'particle', name: '悬浮粒子', isMicro: false }, { key: 'pressure', name: '静压差', isMicro: false },
+    { key: 'air', name: '换气次数/风速/风量', isMicro: false }, { key: 'temphum', name: '温湿度', isMicro: false },
+    { key: 'noise', name: '噪声', isMicro: false }, { key: 'lux', name: '照度', isMicro: false },
+    { key: 'planktonic', name: '浮游菌', isMicro: true }, { key: 'settling', name: '沉降菌', isMicro: true }
+];
+const specialItems = [
+    { key: 'vibration', name: '振动', isMicro: false }, { key: 'recovery', name: '自净时间', isMicro: false },
+    { key: 'airflow', name: '气流流型', isMicro: false }, { key: 'leakage', name: '高效检漏', isMicro: false },
+    { key: 'uv', name: '紫外灯辐射强度', isMicro: false }, { key: 'surface', name: '表面微生物', isMicro: true }
+];
+const testItems = [...regularItems, ...specialItems];
+
+const combinedLevels = [
+    "5级", "6级", "7级", "8级", "9级",
+    "100级", "1000级", "10000级", "100000级", "300000级",
+    "I级", "II级", "III级", "IV级",
+    "A级", "B级", "C级", "D级"
+];
+
+const basisOptions = [
+    "GB 50591 洁净室施工及验收规范", "GB 50073 洁净厂房设计规范",
+    "GB/T 16292 医药工业洁净室(区)悬浮粒子的测试方法", "GB/T 16294 医药工业洁净室(区)沉降菌的测试方法",
+    "GB/T 16293 医药工业洁净室(区)浮游菌的测试方法", "GB 50457 医药工业洁净厂房设计规范",
+    "GB 50333 医院洁净手术部建筑技术规范", "GB 51110 洁净厂房施工及质量验收规范",
+    "GB 50447 实验动物设施建筑技术规范", "GB 14925 实验动物环境及设施",
+    "WS/T 367 医疗机构消毒技术规范", "GB 15982 医院消毒卫生标准",
+    "YBB 00412004 药品包装材料生产厂房洁净室(区)的测试方法", "GB 50346 生物安全实验室建筑技术规范",
+    "GB/T 25915.1 洁净室及相关受控环境第1部分:空气洁净度等级", "GB/T 25915.3 洁净室及相关受控环境第3部分:检测方法",
+    "GB/T 13554 高效空气过滤器", "YY/T 0033 无菌医疗器具生产管理规范",
+    "GB 50472 电子工业洁净厂房设计规范", "GB 50462 数据中心基础设施施工及验收规范",
+    "GB 50243 通风与空调工程施工质量验收规范", "药品生产质量管理规范（2010年修订)",
+    "中华人民共和国药典（2020年版）", "ISO 14644-1", "ISO 14644-3"
+];
+
+window.onload = function () {
+    initBasisCheckboxes();
+    initAdminLevelSelect();
+    addRoom();
+};
+
+function initBasisCheckboxes() {
+    const testBox = document.getElementById('testBasisBox');
+    const evalBox = document.getElementById('evalBasisBox');
+
+    let htmlStr = '';
+    basisOptions.forEach(basis => {
+        htmlStr += `<label><input type="checkbox" value="${basis}"> ${basis}</label>`;
+    });
+    htmlStr += `<label style="border-top: 1px dashed #eee; padding-top: 8px; margin-top: 5px;">
+                  <input type="checkbox" class="basis-custom-chk"> 自定义录入: 
+                  <input type="text" class="basis-custom-txt" style="width: 250px;" placeholder="在此输入标准名称...">
+                </label>`;
+
+    testBox.innerHTML = htmlStr;
+    evalBox.innerHTML = htmlStr;
+}
+
+function getCheckedBasis(boxId) {
+    const box = document.getElementById(boxId);
+    const regularChecks = box.querySelectorAll('input[type="checkbox"]:not(.basis-custom-chk):checked');
+    let results = Array.from(regularChecks).map(c => c.value);
+
+    const customChk = box.querySelector('.basis-custom-chk');
+    const customTxt = box.querySelector('.basis-custom-txt');
+    if (customChk && customChk.checked && customTxt.value.trim() !== '') {
+        results.push(customTxt.value.trim());
+    }
+    return results.join('\n');
+}
+
+function initAdminLevelSelect() {
+    const adminSelect = document.getElementById('adminClassLevel');
+    adminSelect.innerHTML = "";
+    combinedLevels.forEach(lvl => {
+        const opt = document.createElement('option');
+        opt.value = lvl; opt.text = lvl;
+        adminSelect.appendChild(opt);
+    });
+}
+
+function switchTab(tab) {
+    if (tab === 'admin') {
+        const pwd = prompt("请输入管理员密码：");
+        if (pwd !== ADMIN_PASSWORD) {
+            alert("密码错误，拒绝访问！"); return;
+        }
+        document.getElementById('tabSales').classList.remove('active');
+        document.getElementById('tabAdmin').classList.add('active');
+        document.getElementById('moduleSales').classList.remove('active');
+        document.getElementById('moduleAdmin').classList.add('active');
+        loadAdminPricesToUI();
+    } else {
+        document.getElementById('tabAdmin').classList.remove('active');
+        document.getElementById('tabSales').classList.add('active');
+        document.getElementById('moduleAdmin').classList.remove('active');
+        document.getElementById('moduleSales').classList.add('active');
+        calculateAll();
+    }
+}
+
+function buildDefaultPrices() {
+    let defaultData = {};
+    combinedLevels.forEach(level => {
+        defaultData[level] = {};
+        testItems.forEach(item => {
+            defaultData[level][item.key] = { threshold: 10, pBelow: 100, pAbove: 80 };
+        });
+    });
+    return defaultData;
+}
+
+function getSystemPrices() {
+    const saved = localStorage.getItem('cleanroomPricesV10');
+    if (saved) {
+        let savedData = JSON.parse(saved);
+        let defaultData = buildDefaultPrices();
+        return { ...defaultData, ...savedData };
+    }
+    return buildDefaultPrices();
+}
+
+function loadAdminPricesToUI() {
+    const level = document.getElementById('adminClassLevel').value;
+    const allPrices = getSystemPrices();
+    const currentConfig = allPrices[level];
+    const tbody = document.getElementById('adminPriceBody');
+    tbody.innerHTML = '';
+
+    testItems.forEach(item => {
+        const config = currentConfig[item.key];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><b>${item.name}</b></td>
+            <td><input type="number" id="th_${item.key}" value="${config.threshold}"></td>
+            <td><input type="number" id="pb_${item.key}" value="${config.pBelow}"></td>
+            <td><input type="number" id="pa_${item.key}" value="${config.pAbove}"></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function fillDownColumn(prefix) {
+    const firstInput = document.getElementById(`${prefix}_${testItems[0].key}`);
+    if (!firstInput) return;
+    const fillValue = firstInput.value;
+    testItems.forEach(item => {
+        const input = document.getElementById(`${prefix}_${item.key}`);
+        if (input) input.value = fillValue;
+    });
+}
+
+function saveAdminPrices() {
+    const level = document.getElementById('adminClassLevel').value;
+    let allPrices = getSystemPrices();
+    testItems.forEach(item => {
+        allPrices[level][item.key] = {
+            threshold: parseInt(document.getElementById(`th_${item.key}`).value) || 0,
+            pBelow: parseFloat(document.getElementById(`pb_${item.key}`).value) || 0,
+            pAbove: parseFloat(document.getElementById(`pa_${item.key}`).value) || 0
+        };
+    });
+    localStorage.setItem('cleanroomPricesV10', JSON.stringify(allPrices));
+    alert(`【${level}】 的阶梯单价配置已成功保存！`);
+}
+
+function copyToAllLevels() {
+    if (!confirm("确定要将当前界面的价格配置，批量覆盖到所有级别的配置中吗？")) return;
+    let allPrices = getSystemPrices();
+    let sourceConfig = {};
+    testItems.forEach(item => {
+        sourceConfig[item.key] = {
+            threshold: parseInt(document.getElementById(`th_${item.key}`).value) || 0,
+            pBelow: parseFloat(document.getElementById(`pb_${item.key}`).value) || 0,
+            pAbove: parseFloat(document.getElementById(`pa_${item.key}`).value) || 0
+        };
+    });
+    combinedLevels.forEach(l => { allPrices[l] = JSON.parse(JSON.stringify(sourceConfig)); });
+    localStorage.setItem('cleanroomPricesV10', JSON.stringify(allPrices));
+    alert("已成功复制到所有级别！");
+}
+
+function handleStandardChange() {
+    const std = document.getElementById('standardSelect').value;
+    const isPureGB = (std === 'GB');
+    const isGB16292Old = (std === 'GB16292_OLD');
+
+    const microbioCells = document.querySelectorAll('.cell-microbio');
+
+    microbioCells.forEach(cell => {
+        const cb = cell.querySelector('input[type="checkbox"]');
+        if (isPureGB) {
+            cell.classList.add('hidden-col');
+            if (cb) cb.checked = false;
+        } else {
+            cell.classList.remove('hidden-col');
+            if (cb && (cb.classList.contains('chk-planktonic') || cb.classList.contains('chk-settling'))) {
+                cb.checked = true;
+            }
+        }
+    });
+
+    const allowedLevels = isGB16292Old ? ["100级", "10000级", "100000级", "300000级"] : combinedLevels;
+    const levelSelects = document.querySelectorAll('.room-level');
+
+    levelSelects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '';
+
+        allowedLevels.forEach(lvl => {
+            const opt = document.createElement('option');
+            opt.value = lvl;
+            opt.text = lvl;
+            select.appendChild(opt);
+        });
+
+        if (allowedLevels.includes(currentValue)) {
+            select.value = currentValue;
+        } else {
+            select.value = allowedLevels[0];
+        }
+    });
+
+    calculateAll();
+}
+
+function handleManualEdit(inputElement) {
+    if (inputElement.value === '') {
+        inputElement.dataset.locked = "false";
+        inputElement.classList.remove('manual-point');
+        inputElement.classList.add('auto-point');
+    } else {
+        inputElement.dataset.locked = "true";
+        inputElement.classList.remove('auto-point');
+        inputElement.classList.add('manual-point');
+    }
+    calculateAll();
+}
+
+function fillDownRoomLevel() {
+    const selects = document.querySelectorAll('.room-level');
+    if (selects.length <= 1) return;
+
+    const firstValue = selects[0].value;
+    selects.forEach((sel, index) => {
+        if (index > 0) sel.value = firstValue;
+    });
+    calculateAll();
+}
+
+let roomCount = 0;
+
+function addRoom(importName = '', importLevel = '', importArea = '') {
+    roomCount++;
+    const tbody = document.getElementById('roomBody');
+    const tr = document.createElement('tr');
+    tr.id = `room_row_${roomCount}`;
+    tr.className = 'room-group';
+
+    let defaultName = importName ? importName : `房间 ${roomCount}`;
+    let defaultArea = importArea ? importArea : 50;
+
+    const currentStd = document.getElementById('standardSelect') ? document.getElementById('standardSelect').value : 'ISO';
+    const allowedLevels = (currentStd === 'GB16292_OLD') ? ["100级", "10000级", "100000级", "300000级"] : combinedLevels;
+
+    let levelSelectHtml = `<select class="room-level" onchange="calculateAll()">`;
+    allowedLevels.forEach(lvl => {
+        let selected = (lvl === importLevel) ? 'selected' : '';
+        levelSelectHtml += `<option value="${lvl}" ${selected}>${lvl}</option>`;
+    });
+    levelSelectHtml += `</select>`;
+
+    let regularHtml = `<div class="item-row regular-row"><span class="row-label">[常规项目]</span>`;
+    regularItems.forEach(item => {
+        let isMicro = item.isMicro ? 'cell-microbio' : '';
+        regularHtml += `
+            <div class="item-box ${isMicro}">
+                <label class="item-label">
+                    <input type="checkbox" class="chk-${item.key}" checked onchange="calculateAll()">
+                    ${item.name}
+                </label>
+                <input type="number" class="pt-input auto-point in-${item.key}" data-locked="false" oninput="handleManualEdit(this)">
+            </div>
+        `;
+    });
+    regularHtml += `</div>`;
+
+    let specialHtml = `<div class="item-row special-row"><span class="row-label">[特殊项目]</span>`;
+    specialItems.forEach(item => {
+        let isMicro = item.isMicro ? 'cell-microbio' : '';
+        specialHtml += `
+            <div class="item-box ${isMicro}">
+                <label class="item-label">
+                    <input type="checkbox" class="chk-${item.key}" onchange="calculateAll()">
+                    ${item.name}
+                </label>
+                <input type="number" class="pt-input auto-point in-${item.key}" data-locked="false" oninput="handleManualEdit(this)">
+            </div>
+        `;
+    });
+    specialHtml += `</div>`;
+
+    tr.innerHTML = `
+        <td><input type="text" class="room-name" value="${defaultName}"></td>
+        <td>${levelSelectHtml}</td>
+        <td><input type="number" class="room-area" value="${defaultArea}" min="1" oninput="calculateAll()"></td>
+        <td class="config-cell">
+            ${regularHtml}
+            ${specialHtml}
+        </td>
+        <td><span class="room-total-text">¥ 0.00</span></td>
+        <td><button class="btn btn-danger" onclick="removeRoom('${tr.id}')">删除</button></td>
+    `;
+
+    tbody.appendChild(tr);
+    handleStandardChange();
+}
+
+function removeRoom(rowId) {
+    document.getElementById(rowId).remove();
+    calculateAll();
+}
+
+function mapCustomerLevelToSystem(rawLevel) {
+    if (!rawLevel) return combinedLevels[0];
+    let lvl = rawLevel.toString().trim().toUpperCase();
+
+    if (combinedLevels.includes(lvl)) return lvl;
+
+    if (lvl.includes('三十万') || lvl.includes('30万') || lvl.includes('300000')) return "300000级";
+    if (lvl.includes('十万') || lvl.includes('10万') || lvl.includes('100000')) return "100000级";
+    if (lvl.includes('一万') || lvl.includes('万级') || lvl.includes('1万') || lvl.includes('10000')) return "10000级";
+    if (lvl.includes('千级') || lvl.includes('1000')) return "1000级";
+    if (lvl.includes('百级') || lvl.includes('100')) return "100级";
+
+    if (lvl.includes('5级') || lvl.includes('ISO 5') || lvl.includes('ISO5')) return "5级";
+    if (lvl.includes('6级') || lvl.includes('ISO 6') || lvl.includes('ISO6')) return "6级";
+    if (lvl.includes('7级') || lvl.includes('ISO 7') || lvl.includes('ISO7')) return "7级";
+    if (lvl.includes('8级') || lvl.includes('ISO 8') || lvl.includes('ISO8')) return "8级";
+    if (lvl.includes('9级') || lvl.includes('ISO 9') || lvl.includes('ISO9')) return "9级";
+
+    if (lvl.includes('A级') || lvl.includes('A类')) return "A级";
+    if (lvl.includes('B级') || lvl.includes('B类')) return "B级";
+    if (lvl.includes('C级') || lvl.includes('C类')) return "C级";
+    if (lvl.includes('D级') || lvl.includes('D类')) return "D级";
+
+    if (lvl.includes('I级') || lvl.includes('Ⅰ级')) return "I级";
+    if (lvl.includes('II级') || lvl.includes('Ⅱ级')) return "II级";
+    if (lvl.includes('III级') || lvl.includes('Ⅲ级')) return "III级";
+    if (lvl.includes('IV级') || lvl.includes('Ⅳ级')) return "IV级";
+
+    return combinedLevels[0];
+}
+
+function downloadImportTemplate() {
+    const wsData = [
+        ["检测区域", "房间名称\n（必填）", "房间编号", "洁净级别\n（必填）", "房间面积（m2）（必填）", "备注说明(系统不读取)"],
+        ["1", "煮料间", "R-01", "万级", "55", "系统极其智能，级别填万级会自动识别为 10000级"],
+        ["1", "灌装间", "R-02", "D级", "80", "您也可以直接用公司原本的《洁净检测委托单》导入！"]
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [{ wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 22 }, { wch: 65 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "委托单导入模板");
+    XLSX.writeFile(wb, "洁净检测委托单模板.xlsx");
+}
+
+function handleImportExcel(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+
+            const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            let headerRowIndex = -1;
+            let colName = -1, colLevel = -1, colArea = -1;
+
+            for (let i = 0; i < Math.min(30, rawData.length); i++) {
+                const row = rawData[i];
+                if (!row) continue;
+                for (let j = 0; j < row.length; j++) {
+                    let cellValue = (row[j] || "").toString().replace(/\s+/g, '');
+                    if (cellValue.includes("房间名称")) {
+                        headerRowIndex = i;
+                        break;
+                    }
+                }
+                if (headerRowIndex !== -1) {
+                    for (let j = 0; j < row.length; j++) {
+                        let cellValue = (row[j] || "").toString().replace(/\s+/g, '');
+                        if (cellValue.includes("房间名称")) colName = j;
+                        else if (cellValue.includes("级别") || cellValue.includes("等级")) colLevel = j;
+                        else if (cellValue.includes("面积")) colArea = j;
+                    }
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1 || colName === -1 || colArea === -1) {
+                alert("未能识别委托单格式，请确保表格中包含【房间名称】和【房间面积】的列名。");
+                return;
+            }
+
+            let importedCount = 0;
+            for (let i = headerRowIndex + 1; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || row.length === 0) continue;
+
+                const rName = (row[colName] || "").toString().trim();
+                const rawLevel = (row[colLevel] || "").toString().trim();
+                const rArea = parseFloat(row[colArea]) || 0;
+
+                if (rName || rArea > 0) {
+                    const standardLevel = mapCustomerLevelToSystem(rawLevel);
+
+                    const existingRooms = document.querySelectorAll('.room-group');
+                    if (existingRooms.length === 1 && existingRooms[0].querySelector('.room-name').value === "房间 1" && parseFloat(existingRooms[0].querySelector('.room-area').value) === 50) {
+                        existingRooms[0].remove();
+                    }
+
+                    addRoom(rName, standardLevel, rArea);
+                    importedCount++;
+                }
+            }
+
+            if (importedCount > 0) {
+                alert(`成功为您从表单中批量导入了 ${importedCount} 个房间！`);
+                calculateAll();
+            } else {
+                alert("未读取到有效的房间数据，请检查表格内容。");
+            }
+        } catch (error) {
+            alert("解析文件失败！请确保上传的是 Excel 文件。");
+            console.error(error);
+        } finally {
+            event.target.value = '';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+const calcRules = {
+    "GB": {
+        particle: (a, l) => Math.ceil(Math.sqrt(a)),
+        temphum: (a, l) => Math.max(2, Math.ceil(a / 100)),
+        noise: (a, l) => Math.ceil(a / 100),
+        lux: (a, l) => Math.ceil(a / 25),
+        pressure: (a, l) => 1, air: (a, l) => 1, microbio: (a, l) => 0, fixed: (a, l) => 1
+    },
+    "GB50591": {
+        particle: (a, l) => Math.ceil(Math.sqrt(a)),
+        temphum: (a, l) => Math.max(2, Math.ceil(a / 100)),
+        noise: (a, l) => a <= 15 ? 1 : 5,
+        lux: (a, l) => a <= 20 ? 2 : Math.ceil(a / 4),
+        pressure: (a, l) => 1, air: (a, l) => 1,
+        microbio: (a, l) => Math.ceil(Math.sqrt(a)),
+        fixed: (a, l) => 1
+    },
+    "ISO": {
+        particle: (a, l) => {
+            const t = [{ max: 2, pts: 1 }, { max: 4, pts: 2 }, { max: 6, pts: 3 }, { max: 8, pts: 4 }, { max: 10, pts: 5 }, { max: 24, pts: 6 }, { max: 28, pts: 7 }, { max: 32, pts: 8 }, { max: 36, pts: 9 }, { max: 52, pts: 10 }, { max: 56, pts: 11 }, { max: 64, pts: 12 }, { max: 68, pts: 13 }, { max: 72, pts: 14 }, { max: 76, pts: 15 }, { max: 104, pts: 16 }, { max: 108, pts: 17 }, { max: 116, pts: 18 }, { max: 148, pts: 19 }, { max: 156, pts: 20 }, { max: 192, pts: 21 }, { max: 232, pts: 22 }, { max: 276, pts: 23 }, { max: 352, pts: 24 }, { max: 436, pts: 25 }, { max: 636, pts: 26 }, { max: 1000, pts: 27 }];
+            if (a <= 1000) { for (let i = 0; i < t.length; i++) if (a <= t[i].max) return t[i].pts; }
+            return Math.ceil(27 * (a / 1000));
+        },
+        temphum: (a, l) => Math.max(2, Math.ceil(a / 100)),
+        noise: (a, l) => Math.ceil(a / 100),
+        lux: (a, l) => Math.ceil(a / 25),
+        pressure: (a, l) => 1, air: (a, l) => 1, fixed: (a, l) => 1,
+        microbio: (a, l) => {
+            const t = [{ max: 2, pts: 1 }, { max: 4, pts: 2 }, { max: 6, pts: 3 }, { max: 8, pts: 4 }, { max: 10, pts: 5 }, { max: 24, pts: 6 }, { max: 28, pts: 7 }, { max: 32, pts: 8 }, { max: 36, pts: 9 }, { max: 52, pts: 10 }, { max: 56, pts: 11 }, { max: 64, pts: 12 }, { max: 68, pts: 13 }, { max: 72, pts: 14 }, { max: 76, pts: 15 }, { max: 104, pts: 16 }, { max: 108, pts: 17 }, { max: 116, pts: 18 }, { max: 148, pts: 19 }, { max: 156, pts: 20 }, { max: 192, pts: 21 }, { max: 232, pts: 22 }, { max: 276, pts: 23 }, { max: 352, pts: 24 }, { max: 436, pts: 25 }, { max: 636, pts: 26 }, { max: 1000, pts: 27 }];
+            if (a <= 1000) { for (let i = 0; i < t.length; i++) if (a <= t[i].max) return t[i].pts; }
+            return Math.ceil(27 * (a / 1000));
+        }
+    },
+    "GB16292_OLD": {
+        particle: (a, l) => {
+            if (l === "100级") {
+                if (a < 10) return 3; if (a < 20) return 4; if (a < 40) return 8; if (a < 100) return 16;
+                if (a < 200) return 40; if (a < 400) return 80; if (a < 1000) return 160; if (a < 2000) return 400; return 800;
+            } else if (l === "10000级") {
+                if (a < 10) return 2; if (a < 20) return 2; if (a < 40) return 2; if (a < 100) return 4;
+                if (a < 200) return 10; if (a < 400) return 20; if (a < 1000) return 40; if (a < 2000) return 100; return 200;
+            } else if (l === "100000级" || l === "300000级") {
+                if (a < 10) return 2; if (a < 20) return 2; if (a < 40) return 2; if (a < 100) return 2;
+                if (a < 200) return 3; if (a < 400) return 6; if (a < 1000) return 13; if (a < 2000) return 32; return 63;
+            }
+            return 2;
+        },
+        microbio: (a, l) => {
+            if (l === "100级") {
+                if (a < 10) return 3; if (a < 20) return 4; if (a < 40) return 8; if (a < 100) return 16;
+                if (a < 200) return 40; if (a < 400) return 80; if (a < 1000) return 160; if (a < 2000) return 400; return 800;
+            } else if (l === "10000级") {
+                if (a < 10) return 2; if (a < 20) return 2; if (a < 40) return 2; if (a < 100) return 4;
+                if (a < 200) return 10; if (a < 400) return 20; if (a < 1000) return 40; if (a < 2000) return 100; return 200;
+            } else if (l === "100000级" || l === "300000级") {
+                if (a < 10) return 2; if (a < 20) return 2; if (a < 40) return 2; if (a < 100) return 2;
+                if (a < 200) return 3; if (a < 400) return 6; if (a < 1000) return 13; if (a < 2000) return 32; return 63;
+            }
+            return 2;
+        },
+        air: (a, l) => {
+            if (a < 100) return Math.ceil(a / 15);
+            if (a >= 100 && a < 200) return Math.ceil(a / 17);
+            if (a >= 200 && a < 400) return Math.ceil(a / 20);
+            return Math.ceil(a / 22);
+        },
+        temphum: (a, l) => Math.max(2, Math.ceil(a / 100)),
+        noise: (a, l) => a <= 15 ? 1 : 5,
+        lux: (a, l) => a <= 20 ? 2 : Math.ceil(a / 4),
+        pressure: (a, l) => 1,
+        fixed: (a, l) => 1
+    }
+};
+
+let currentExportRooms = [];
+let currentGrandTotal = 0;
+
+function calculateAll() {
+    const standard = document.getElementById('standardSelect').value;
+    const rule = calcRules[standard];
+    const allPrices = getSystemPrices();
+    const discount = parseFloat(document.getElementById('discountFactor').value) || 1.0;
+
+    const paramsMap = [
+        { key: 'particle', ruleKey: 'particle' }, { key: 'pressure', ruleKey: 'pressure' },
+        { key: 'air', ruleKey: 'air' }, { key: 'temphum', ruleKey: 'temphum' },
+        { key: 'noise', ruleKey: 'noise' }, { key: 'lux', ruleKey: 'lux' },
+        { key: 'planktonic', ruleKey: 'microbio' }, { key: 'settling', ruleKey: 'microbio' },
+        { key: 'vibration', ruleKey: 'fixed' }, { key: 'recovery', ruleKey: 'fixed' },
+        { key: 'airflow', ruleKey: 'fixed' }, { key: 'leakage', ruleKey: 'fixed' },
+        { key: 'uv', ruleKey: 'fixed' }, { key: 'surface', ruleKey: 'fixed' }
+    ];
+
+    let ptsByLevel = {};
+    combinedLevels.forEach(lvl => {
+        let emptyObj = {};
+        paramsMap.forEach(p => emptyObj[p.key] = 0);
+        ptsByLevel[lvl] = emptyObj;
+    });
+
+    let roomsTemp = [];
+
+    const rows = document.querySelectorAll('.room-group');
+    rows.forEach(tr => {
+        const roomName = tr.querySelector('.room-name').value;
+        const roomLevel = tr.querySelector('.room-level').value;
+        const area = parseFloat(tr.querySelector('.room-area').value) || 0;
+
+        let roomPts = {};
+        let roomChecks = {};
+
+        if (area > 0) {
+            paramsMap.forEach(p => {
+                const chk = tr.querySelector(`.chk-${p.key}`);
+                const input = tr.querySelector(`.in-${p.key}`);
+
+                const isHidden = chk.closest('.item-box').classList.contains('hidden-col');
+                const isChecked = !isHidden && chk.checked;
+
+                roomChecks[p.key] = isChecked;
+
+                if (input.dataset.locked !== "true") {
+                    // 核心升级：计算规则同时传入了面积和级别
+                    input.value = rule[p.ruleKey](area, roomLevel);
+                }
+
+                let pts = isChecked ? (parseInt(input.value) || 0) : 0;
+                roomPts[p.key] = pts;
+
+                if (ptsByLevel[roomLevel]) {
+                    ptsByLevel[roomLevel][p.key] += pts;
+                }
+            });
+        }
+        roomsTemp.push({ tr, roomName, roomLevel, area, roomPts, roomChecks });
+    });
+
+    currentGrandTotal = 0;
+    currentExportRooms = [];
+
+    roomsTemp.forEach(rt => {
+        const config = allPrices[rt.roomLevel] || allPrices[combinedLevels[0]];
+        const lvlPool = ptsByLevel[rt.roomLevel] || ptsByLevel[combinedLevels[0]];
+        let roomTotal = 0;
+
+        if (rt.area > 0) {
+            paramsMap.forEach(p => {
+                let actualPrice = lvlPool[p.key] <= config[p.key].threshold ? config[p.key].pBelow : config[p.key].pAbove;
+                roomTotal += rt.roomPts[p.key] * actualPrice;
+            });
+            roomTotal = roomTotal * discount;
         }
 
-        // 【逻辑2】换气次数、风速、风量 —— 按面积分段计算并向上取整
-        const windProjects = ['换气次数', '风速', '风量'];
-        if (windProjects.includes(projectType)) {
-            // 防止面积为0或负数导致计算异常，最小按1平米算
-            const safeArea = numArea > 0 ? numArea : 1; 
-            
-            // Math.ceil() 的作用就是“有小数直接进位（向上取整）”
-            if (safeArea < 100) {
-                return Math.ceil(safeArea / 15);
-            } else if (safeArea >= 100 && safeArea < 200) {
-                return Math.ceil(safeArea / 17);
-            } else if (safeArea >= 200 && safeArea < 400) {
-                return Math.ceil(safeArea / 20);
-            } else {
-                return Math.ceil(safeArea / 22);
+        currentGrandTotal += roomTotal;
+        rt.tr.querySelector('.room-total-text').innerText = '¥ ' + roomTotal.toFixed(2);
+
+        if (rt.area > 0) {
+            let items = [];
+            paramsMap.forEach(p => {
+                if (rt.roomChecks[p.key]) {
+                    items.push({
+                        name: testItems.find(t => t.key === p.key).name,
+                        pts: rt.roomPts[p.key]
+                    });
+                }
+            });
+
+            if (items.length > 0) {
+                currentExportRooms.push({
+                    roomName: rt.roomName,
+                    roomLevel: rt.roomLevel,
+                    area: rt.area,
+                    roomTotal: roomTotal,
+                    items: items
+                });
+            }
+        }
+    });
+
+    document.getElementById('grandTotal').innerText = `¥ ${currentGrandTotal.toFixed(2)}`;
+}
+
+function exportToExcel() {
+    const industry = document.getElementById('industrySelect').value;
+    const selectedTestBasis = getCheckedBasis('testBasisBox');
+    const selectedEvalBasis = getCheckedBasis('evalBasisBox');
+
+    let excelData = [
+        ["行业", "仪器名称", "洁净度等级", "面积(m²)", "检测参数", "检测点/次", "检测依据", "评价依据", "房间总计"]
+    ];
+    let merges = [];
+
+    let globalStartRow = 1;
+    let currentRow = 1;
+
+    currentExportRooms.forEach(room => {
+        let roomStartRow = currentRow;
+        let roomParamCount = room.items.length;
+
+        room.items.forEach((item) => {
+            let isFirst = (roomStartRow === currentRow);
+            excelData.push([
+                isFirst ? industry : "",
+                isFirst ? room.roomName : "",
+                isFirst ? room.roomLevel : "",
+                isFirst ? room.area : "",
+                item.name,
+                item.pts,
+                isFirst ? selectedTestBasis : "",
+                isFirst ? selectedEvalBasis : "",
+                isFirst ? `¥ ${room.roomTotal.toFixed(2)}` : ""
+            ]);
+            currentRow++;
+        });
+
+        if (roomParamCount > 1) {
+            const re = roomStartRow + roomParamCount - 1;
+            merges.push({ s: { r: roomStartRow, c: 1 }, e: { r: re, c: 1 } });
+            merges.push({ s: { r: roomStartRow, c: 2 }, e: { r: re, c: 2 } });
+            merges.push({ s: { r: roomStartRow, c: 3 }, e: { r: re, c: 3 } });
+            merges.push({ s: { r: roomStartRow, c: 6 }, e: { r: re, c: 6 } });
+            merges.push({ s: { r: roomStartRow, c: 7 }, e: { r: re, c: 7 } });
+            merges.push({ s: { r: roomStartRow, c: 8 }, e: { r: re, c: 8 } });
+        }
+    });
+
+    let globalEndRow = currentRow - 1;
+
+    if (globalEndRow >= globalStartRow) {
+        if (globalEndRow > globalStartRow) {
+            merges.push({ s: { r: globalStartRow, c: 0 }, e: { r: globalEndRow, c: 0 } });
+        }
+    } else {
+        alert("没有可导出的数据，请检查是否添加了房间、输入了有效面积并勾选了检测项目！");
+        return;
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    ws['!merges'] = merges;
+
+    ws['!cols'] = [
+        { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 22 },
+        { wch: 10 }, { wch: 45 }, { wch: 45 }, { wch: 15 }
+    ];
+
+    ws['!rows'] = [{ hpx: 50 }];
+
+    for (let col = 0; col < 9; col++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (ws[cellRef]) {
+            ws[cellRef].s = {
+                fill: { fgColor: { rgb: "3498DB" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true, sz: 12 },
+                alignment: { vertical: "center", horizontal: "center" }
+            };
+        }
+    }
+
+    for (let r = 1; r <= globalEndRow; r++) {
+        for (let c = 0; c < 9; c++) {
+            const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+            if (ws[cellRef]) {
+                ws[cellRef].s = {
+                    alignment: { vertical: "center", horizontal: "center", wrapText: true }
+                };
             }
         }
     }
 
-    // ==========================================
-    // 【逻辑3】其他项目或标准 —— 沿用原有 50591 逻辑
-    // 如果不是旧版标准，或者测的是“静压差”、“温湿度”，就会走到这里
-    // ==========================================
-    return calculatePoints50591(numArea, numLevel, projectType); 
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "报价单明细");
+    XLSX.writeFile(wb, `洁净室检测明细单_${industry}.xlsx`);
 }
 
-/**
- * 辅助函数：专门用于查询 GB16292 旧版的表 1 矩阵
- */
-function getGB16292TablePoints(area, level) {
-    if (area < 10) {
-        if (level === 100) return 2; // 表中为2~3，自动报价默认取下限2
-        return 2; 
-    } else if (area >= 10 && area < 20) {
-        if (level === 100) return 4;
-        return 2;
-    } else if (area >= 20 && area < 40) {
-        if (level === 100) return 8;
-        return 2;
-    } else if (area >= 40 && area < 100) {
-        if (level === 100) return 16;
-        if (level === 10000) return 4;
-        return 2;
-    } else if (area >= 100 && area < 200) {
-        if (level === 100) return 40;
-        if (level === 10000) return 10;
-        return 3;
-    } else if (area >= 200 && area < 400) {
-        if (level === 100) return 80;
-        if (level === 10000) return 20;
-        return 6;
-    } else if (area >= 400 && area < 1000) {
-        if (level === 100) return 160;
-        if (level === 10000) return 40;
-        return 13;
-    } else if (area >= 1000 && area < 2000) {
-        if (level === 100) return 400;
-        if (level === 10000) return 100;
-        return 32;
-    } else if (area >= 2000) {
-        if (level === 100) return 800;
-        if (level === 10000) return 200;
-        return 63;
+// --- 新增：一键清空表单功能 ---
+function clearAllData() {
+    if (!confirm("确定要清空所有已填写的房间和配置，重新开始吗？")) {
+        return;
     }
-    
-    return 2; // 保底返回值，防止出现未匹配到的异常级别
-}
 
-/**
- * 原有的 50591 计算逻辑函数
- * 注意：请把你之前写好的 50591 点数计算代码放在这个函数里面！
- */
-function calculatePoints50591(area, level, projectType) {
-    // 假设你之前有一个计算面积平方根的代码，你可以放在这里
-    // 例如：
-    // if (projectType === '悬浮粒子') { ... }
-    
-    return 1; // 这里只是个占位符，记得换成你原本的代码
+    document.getElementById('industrySelect').selectedIndex = 0;
+    document.getElementById('standardSelect').selectedIndex = 0;
+    document.getElementById('discountFactor').value = "1.0";
+
+    const checkboxes = document.querySelectorAll('.basis-container input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    const customInputs = document.querySelectorAll('.basis-custom-txt');
+    customInputs.forEach(input => input.value = '');
+
+    document.getElementById('roomBody').innerHTML = '';
+    roomCount = 0;
+
+    addRoom();
+    handleStandardChange();
 }
