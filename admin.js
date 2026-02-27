@@ -70,9 +70,9 @@ function loadAdminPricesToUI() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><b>${item.name}</b></td>
-            <td><input type="number" id="th_${item.key}" value="${config.threshold}"></td>
-            <td><input type="number" id="pb_${item.key}" value="${config.pBelow}"></td>
-            <td><input type="number" id="pa_${item.key}" value="${config.pAbove}"></td>
+            <td><input type="number" id="th_${item.key}" value="${config.threshold}" oninput="saveAdminPrices(true)"></td>
+            <td><input type="number" id="pb_${item.key}" value="${config.pBelow}" oninput="saveAdminPrices(true)"></td>
+            <td><input type="number" id="pa_${item.key}" value="${config.pAbove}" oninput="saveAdminPrices(true)"></td>
         `;
         tbody.appendChild(tr);
     });
@@ -86,6 +86,7 @@ function fillDownColumn(prefix) {
         const input = document.getElementById(`${prefix}_${item.key}`);
         if (input) input.value = fillValue;
     });
+    saveAdminPrices(true); // 批量填充后自动静默保存
 }
 
 function saveAdminPrices(silent = false) {
@@ -271,6 +272,37 @@ async function getCloudFileInfo() {
     } catch (e) {
         console.error("获取云端文件失败:", e);
         return null;
+    }
+}
+
+// 重新从云端反向全量同步配置
+async function adminPullFromCloud() {
+    const url = `https://gitee.com/api/v5/repos/${GITEE_CONFIG.owner}/${GITEE_CONFIG.repo}/contents/${GITEE_CONFIG.path}?t=${new Date().getTime()}`;
+    try {
+        showToast("正在查询云端配置...", "info");
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`云端响应异常: ${response.status}`);
+
+        const resJson = await response.json();
+        if (!resJson.content) throw new Error("API 响应体未携带内容报文");
+
+        const rawContentBase64 = resJson.content;
+        const cleanBase64 = rawContentBase64.replace(/[\r\n\s]/g, '');
+        const ourObfuscatedString = decodeURIComponent(escape(atob(cleanBase64)));
+        const jsonStr = decodeURIComponent(escape(atob(ourObfuscatedString)));
+        const parsedData = JSON.parse(jsonStr);
+
+        if (parsedData.sign === "CLEANROOM_CONFIG_X1" && parsedData.data) {
+            localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
+            loadAdminPricesToUI();
+            showToast("成功从 Gitee 拉取最新云端配置覆盖本地！", "success");
+        } else {
+            throw new Error("云端数据签名校验失败或格式错误。");
+        }
+    } catch (e) {
+        showToast("拉取失败：" + e.message, "danger");
+        console.error(e);
+        alert("从云端获取失败：请检查网络情况或仓库状态。");
     }
 }
 
