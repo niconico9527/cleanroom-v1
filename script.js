@@ -425,6 +425,7 @@ function addRoom(importName = '', importLevel = '', importArea = '') {
         <td class="config-cell">
             ${regularHtml}
             ${specialHtml}
+            <div class="collapsed-summary"></div>
         </td>
         <td><span class="room-total-text">¥ 0.00</span></td>
         <td><button class="btn btn-danger" onclick="removeRoom('${tr.id}')">删除</button></td>
@@ -801,14 +802,24 @@ function calculateAll() {
 
         if (rt.area > 0) {
             let items = [];
+            let summaryHtml = '';
             paramsMap.forEach(p => {
                 if (rt.roomChecks[p.key]) {
+                    const itemName = testItems.find(t => t.key === p.key).name;
+                    const itemPts = rt.roomPts[p.key];
                     items.push({
-                        name: testItems.find(t => t.key === p.key).name,
-                        pts: rt.roomPts[p.key]
+                        name: itemName,
+                        pts: itemPts
                     });
+                    summaryHtml += `<span class="summary-pill">${itemName}: <b>${itemPts}</b>点</span>`;
                 }
             });
+
+            if (summaryHtml === '') {
+                summaryHtml = '<span class="summary-pill empty-pill">(未选任何项目)</span>';
+            }
+            const summaryDiv = rt.tr.querySelector('.collapsed-summary');
+            if (summaryDiv) summaryDiv.innerHTML = summaryHtml;
 
             if (items.length > 0) {
                 currentExportRooms.push({

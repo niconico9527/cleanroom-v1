@@ -294,6 +294,40 @@ th {
     display: none;
 }
 
+.room-group.collapsed .collapsed-summary {
+    display: flex;
+}
+
+.collapsed-summary {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+}
+
+.summary-pill {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.summary-pill b {
+    color: #0c4a6e;
+    font-size: 13px;
+    margin-left: 4px;
+}
+
+.summary-pill.empty-pill {
+    background: transparent;
+    color: #9ca3af;
+    border: 1px dashed #d1d5da;
+}
+
 .btn-toggle-collapse {
     padding: 4px 8px;
     font-size: 11px;
