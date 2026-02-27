@@ -35,13 +35,18 @@ const basisOptions = [
     "中华人民共和国药典（2020年版）", "ISO 14644-1", "ISO 14644-3"
 ];
 
-window.onload = function () {
+const GITEE_PULL_URL = "https://gitee.com/zhang_jia_shu/cleanroom-config/raw/master/latest_price.json";
+
+window.onload = async function () {
     initBasisCheckboxes();
 
-    // 检查是否有本地缓存配置
+    // 1. 启动时自动从云端静默拉取最新配置
+    await fetchCloudConfig();
+
+    // 2. 检查是否有本地缓存配置
     const saved = localStorage.getItem('cleanroomPricesV10');
     if (!saved) {
-        document.getElementById('currentConfigStatus').innerHTML = "⚠️ <b>尚未导入价格库！请联系管理员获取 .crm 价格配置包</b>";
+        document.getElementById('currentConfigStatus').innerHTML = "⚠️ <b>尚未接入系统！请确保网络畅通或手动导入离线包</b>";
         document.getElementById('currentConfigStatus').style.color = "#dc2626";
     }
 
@@ -106,6 +111,97 @@ function getSystemPrices() {
         return { ...defaultData, ...savedData };
     }
     return buildDefaultPrices();
+}
+
+// ====== 客户端 Serverless 云端静默同频引擎 ======
+// 因为本地双击打开HTML是 file:// 协议，直接请求 raw.gitee.com 会被浏览器的 CORS 反跨域机制无情拦截。
+// 曲线救国：客户端也使用 Gitee 的官方查询 API 来获取文件内容（API 节点默认允许所有跨域 CORS 请求）
+const GITEE_PULL_API = "https://gitee.com/api/v5/repos/zhang_jia_shu/cleanroom-config/contents/latest_price.json";
+
+async function fetchCloudConfig() {
+    const statusEl = document.getElementById('currentConfigStatus');
+    try {
+        statusEl.innerHTML = "🔄 正在连接云端核对核心计价中枢...";
+        statusEl.style.color = "#3b82f6";
+
+        // 通过 Gitee 官方开放 API 请求，完美绕过跨域限制
+        const response = await fetch(`${GITEE_PULL_API}?t=${new Date().getTime()}`);
+
+        if (!response.ok) {
+            throw new Error(`云端响应异常: ${response.status}`);
+        }
+
+        const resJson = await response.json();
+        if (!resJson.content) throw new Error("API 响应体未携带内容报文");
+
+        // Gitee API 返回的 file content 自身已经是 base64 编码的主体了
+        const rawContentBase64 = resJson.content;
+
+        // 关键修复：Gitee 的 API 返回的 Base64 字符串为了可读性，每 64 个字符会强行加一个换行符 \n。
+        // 原生的浏览器 atob() 遇到换行符会直接奔溃报 InvalidCharacterError。
+        const cleanBase64 = rawContentBase64.replace(/[\r\n\s]/g, '');
+
+        // 第一次解码：解开外层包装 (Gitee 包装的 Base64 转回 utf-8 字符串)
+        // 专门处理中文的 Base64 解码通用方法
+        const ourObfuscatedString = decodeURIComponent(escape(atob(cleanBase64)));
+
+        // 第二次解码：根据我们在 admin.js 里的混淆逻辑将真实 JSON 解密出来
+        // 因为我们在 admin.js pushToCloud 的时候为了稳妥，使用了 btoa(encodeURIComponent(...))
+        const jsonStr = decodeURIComponent(escape(atob(ourObfuscatedString)));
+        const parsedData = JSON.parse(jsonStr);
+
+        if (parsedData.sign === "CLEANROOM_CONFIG_X1" && parsedData.data) {
+            // 对比时间戳，只有云端的比本地新才覆盖更新
+            const localRaw = localStorage.getItem('cleanroomPricesV10_Meta');
+            let localTime = 0;
+            if (localRaw) {
+                try { localTime = JSON.parse(localRaw).timestamp || 0; } catch (e) { }
+            }
+
+            if (parsedData.timestamp > localTime) {
+                localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
+                localStorage.setItem('cleanroomPricesV10_Meta', JSON.stringify({ timestamp: parsedData.timestamp }));
+                showToast("🌤️ 已自动从云端拉取今日最新价格并生效！", "success");
+            }
+
+            const importTime = new Date(parsedData.timestamp).toLocaleString();
+            statusEl.innerHTML = `🟢 已连接云端，当前单价基准版本：${importTime}`;
+            statusEl.style.color = "#10b981";
+
+            // 触发全局静默重算
+            calculateAll();
+        } else {
+            throw new Error("云端数据签名校验失败或格式错误。");
+        }
+    } catch (e) {
+        console.warn("云端通信挂起，转为离线降级模式:", e);
+        showToast("⚠️ 离线模式：网络异常，正在使用本地最后一次更新的单价", "warning");
+        const meta = localStorage.getItem('cleanroomPricesV10_Meta');
+        if (meta) {
+            const time = new Date(JSON.parse(meta).timestamp).toLocaleString();
+            statusEl.innerHTML = `🟠 离线模式：当前使用系统缓存单价(${time})`;
+            statusEl.style.color = "#f59e0b";
+        }
+    }
+}
+
+// 简单的气泡提示工具（如果 script.js 以前没有注入则这里挂载）
+function showToast(message, type = 'success') {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = message;
+    toastContainer.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
 }
 
 // ====== 全新的离线价格包反混淆导入引擎 ======

@@ -249,3 +249,107 @@ function importAdminEncryptedConfig(event) {
     };
     reader.readAsText(file);
 }
+
+// ==========================================
+// ====== 核心：Gitee Serverless 云端同步引擎 ======
+// ==========================================
+const GITEE_CONFIG = {
+    owner: "zhang_jia_shu",           // Gitee 用户名
+    repo: "cleanroom-config",         // 仓库名
+    path: "latest_price.json",        // 存储在云端的文件名
+    token: "cf337a366df0f575cc3d5a822b45d06a" // 您的私人令牌
+};
+
+// 获取云端文件信息（为了拿到 sha，这是 Git 覆盖文件的必须参数）
+async function getCloudFileInfo() {
+    const url = `https://gitee.com/api/v5/repos/${GITEE_CONFIG.owner}/${GITEE_CONFIG.repo}/contents/${GITEE_CONFIG.path}?access_token=${GITEE_CONFIG.token}`;
+    try {
+        const response = await fetch(url);
+        if (response.status === 404) return null; // 文件还不存在
+        const data = await response.json();
+        return data.sha;
+    } catch (e) {
+        console.error("获取云端文件失败:", e);
+        return null;
+    }
+}
+
+// 执行推送挂载
+async function pushToCloud() {
+    // 1. 整理与混淆当前最新配置
+    saveAdminPrices(true); // 先强行保存一次确保是最新
+    const allPrices = getSystemPrices();
+    const exportData = {
+        sign: "CLEANROOM_CONFIG_X1",
+        timestamp: new Date().getTime(),
+        version: "v1.1_cloud",
+        data: allPrices
+    };
+
+    // 关键：Gitee API 要求内容必须是 Base64 格式
+    const rawJson = JSON.stringify(exportData);
+    // 解决中文 Base64 乱码问题的双重安全转换 (Btoa doesn't natively support utf-8)
+    // 第一层：我们的业务混淆
+    const step1Obfuscated = btoa(unescape(encodeURIComponent(rawJson)));
+
+    // 第二层：发给 Gitee API Content 要求的纯 Base64 (这里虽然也是 Base64，但装在这个盒子里安全)
+    const safeBase64Content = btoa(unescape(encodeURIComponent(step1Obfuscated)));
+
+    // 2. 先尝试获取旧文件的 SHA 值（如果是更新必须带 SHA）
+    showToast("努力连接 Gitee 云服务器中...", "info");
+    document.getElementById('btnCloudPush').disabled = true;
+    document.getElementById('btnCloudPush').innerHTML = "⏳ 正在同步全网...";
+
+    const sha = await getCloudFileInfo();
+
+    // 3. 构建推送到 Gitee 的请求体
+    const url = `https://gitee.com/api/v5/repos/${GITEE_CONFIG.owner}/${GITEE_CONFIG.repo}/contents/${GITEE_CONFIG.path}`;
+    const payload = {
+        access_token: GITEE_CONFIG.token,
+        content: safeBase64Content,
+        message: `Admin Update: 自动推送最新单价配置 (${new Date().toLocaleString()})`
+    };
+    if (sha) payload.sha = sha;
+
+    // 4. 发起强覆盖 PUT / POST 请求
+    try {
+        const method = sha ? 'PUT' : 'POST';
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            showToast("成功！全网基准价已发布到云端，客户端将自动同步！", "success");
+            alert("🚀 发布成功！全国各地的业务员下次打开系统时，都会瞬间自动应用您最新配置的底层价格！");
+        } else {
+            const errData = await response.json();
+            alert("❌ 同步云端失败，请检查网络或 Gitee 仓库配置：\n" + (errData.message || "未知异常"));
+        }
+    } catch (e) {
+        alert("网络请求被拦截，可能是无外网环境或跨域阻断。请检查您的网络连接。");
+    } finally {
+        document.getElementById('btnCloudPush').disabled = false;
+        document.getElementById('btnCloudPush').innerHTML = "🚀 一键发布全网基准价到云端";
+    }
+}
+
+// 简单的气泡提示工具（针对 Admin 端）
+function showToast(message, type = 'success') {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = message;
+    toastContainer.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
