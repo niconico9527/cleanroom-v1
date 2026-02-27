@@ -41,7 +41,7 @@ window.onload = async function () {
     initBasisCheckboxes();
 
     // 1. 启动时自动从云端静默拉取最新配置
-    await fetchCloudConfig();
+    await fetchCloudConfig(false);
 
     // 2. 检查是否有本地缓存配置
     const saved = localStorage.getItem('cleanroomPricesV10');
@@ -57,6 +57,9 @@ window.onload = async function () {
     } else {
         calculateAll();
     }
+
+    // 启动云端更新轮询监控
+    startCloudSyncPolling();
 };
 
 function initBasisCheckboxes() {
@@ -118,40 +121,64 @@ function getSystemPrices() {
 // 曲线救国：客户端也使用 Gitee 的官方查询 API 来获取文件内容（API 节点默认允许所有跨域 CORS 请求）
 const GITEE_PULL_API = "https://gitee.com/api/v5/repos/zhang_jia_shu/cleanroom-config/contents/latest_price.json";
 
-async function fetchCloudConfig() {
+function startCloudSyncPolling() {
+    // 设定为每 5 分钟轮询一次云端更新
+    setInterval(async () => {
+        await fetchCloudConfig(false);
+    }, 5 * 60 * 1000); // 5分钟
+}
+
+function showUpdateNotification() {
+    if (document.getElementById('cloud-update-notice')) return;
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+    const toast = document.createElement('div');
+    toast.id = 'cloud-update-notice';
+    toast.className = `toast warning`;
+    toast.style.pointerEvents = 'auto'; // 允许点击
+    toast.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="font-weight:bold;">💡 检测到云端价格已更新！</div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:5px;">
+                <button onclick="manualFetchCloudConfig(); this.closest('.toast').remove();" style="background:#fff;color:#f59e0b;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-weight:bold;">立即同步</button>
+                <button onclick="this.closest('.toast').remove();" style="background:transparent;color:#fff;border:1px solid #fff;padding:4px 10px;border-radius:4px;cursor:pointer;">忽略</button>
+            </div>
+        </div>
+    `;
+    toastContainer.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+}
+
+function manualFetchCloudConfig() {
+    fetchCloudConfig(true);
+}
+
+async function fetchCloudConfig(isManual = false) {
     const statusEl = document.getElementById('currentConfigStatus');
-    try {
+
+    if (isManual || !window.__initialCloudFetchDone) {
         statusEl.innerHTML = "🔄 正在连接云端核对核心计价中枢...";
         statusEl.style.color = "#3b82f6";
+    }
 
-        // 通过 Gitee 官方开放 API 请求，完美绕过跨域限制
+    try {
         const response = await fetch(`${GITEE_PULL_API}?t=${new Date().getTime()}`);
-
-        if (!response.ok) {
-            throw new Error(`云端响应异常: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`云端响应异常: ${response.status}`);
 
         const resJson = await response.json();
         if (!resJson.content) throw new Error("API 响应体未携带内容报文");
 
-        // Gitee API 返回的 file content 自身已经是 base64 编码的主体了
         const rawContentBase64 = resJson.content;
-
-        // 关键修复：Gitee 的 API 返回的 Base64 字符串为了可读性，每 64 个字符会强行加一个换行符 \n。
-        // 原生的浏览器 atob() 遇到换行符会直接奔溃报 InvalidCharacterError。
         const cleanBase64 = rawContentBase64.replace(/[\r\n\s]/g, '');
-
-        // 第一次解码：解开外层包装 (Gitee 包装的 Base64 转回 utf-8 字符串)
-        // 专门处理中文的 Base64 解码通用方法
         const ourObfuscatedString = decodeURIComponent(escape(atob(cleanBase64)));
-
-        // 第二次解码：根据我们在 admin.js 里的混淆逻辑将真实 JSON 解密出来
-        // 因为我们在 admin.js pushToCloud 的时候为了稳妥，使用了 btoa(encodeURIComponent(...))
         const jsonStr = decodeURIComponent(escape(atob(ourObfuscatedString)));
         const parsedData = JSON.parse(jsonStr);
 
         if (parsedData.sign === "CLEANROOM_CONFIG_X1" && parsedData.data) {
-            // 对比时间戳，只有云端的比本地新才覆盖更新
             const localRaw = localStorage.getItem('cleanroomPricesV10_Meta');
             let localTime = 0;
             if (localRaw) {
@@ -159,30 +186,48 @@ async function fetchCloudConfig() {
             }
 
             if (parsedData.timestamp > localTime) {
-                localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
-                localStorage.setItem('cleanroomPricesV10_Meta', JSON.stringify({ timestamp: parsedData.timestamp }));
-                showToast("🌤️ 已自动从云端拉取今日最新价格并生效！", "success");
+                if (isManual || !window.__initialCloudFetchDone) {
+                    localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
+                    localStorage.setItem('cleanroomPricesV10_Meta', JSON.stringify({ timestamp: parsedData.timestamp }));
+                    showToast("🌤️ 已" + (isManual ? "手动" : "自动") + "从云端拉取今日最新价格并生效！", "success");
+                    calculateAll();
+                } else {
+                    // 后台轮询发现了新版本，提醒用户手动更新
+                    showUpdateNotification();
+                    return;
+                }
+            } else {
+                if (isManual) {
+                    showToast("✅ 当前已是最新版本，无需同步！", "success");
+                }
             }
 
             const importTime = new Date(parsedData.timestamp).toLocaleString();
             statusEl.innerHTML = `🟢 已连接云端，当前单价基准版本：${importTime}`;
             statusEl.style.color = "#10b981";
-
-            // 触发全局静默重算
-            calculateAll();
         } else {
             throw new Error("云端数据签名校验失败或格式错误。");
         }
     } catch (e) {
         console.warn("云端通信挂起，转为离线降级模式:", e);
-        showToast("⚠️ 离线模式：网络异常，正在使用本地最后一次更新的单价", "warning");
-        const meta = localStorage.getItem('cleanroomPricesV10_Meta');
-        if (meta) {
-            const time = new Date(JSON.parse(meta).timestamp).toLocaleString();
-            statusEl.innerHTML = `🟠 离线模式：当前使用系统缓存单价(${time})`;
-            statusEl.style.color = "#f59e0b";
+        if (isManual) {
+            showToast("❌ 手动同步失败：网络异常或云端拒绝连接", "danger");
+        }
+
+        if (!window.__initialCloudFetchDone || isManual) {
+            showToast("⚠️ 离线模式：网络异常，正在使用本地最后一次更新的单价", "warning");
+            const meta = localStorage.getItem('cleanroomPricesV10_Meta');
+            if (meta) {
+                const time = new Date(JSON.parse(meta).timestamp).toLocaleString();
+                statusEl.innerHTML = `🟠 离线模式：当前使用系统缓存单价(${time})`;
+                statusEl.style.color = "#f59e0b";
+            } else {
+                statusEl.innerHTML = "⚠️ <b>尚未接入系统！请确保网络畅通或手动导入离线包</b>";
+                statusEl.style.color = "#dc2626";
+            }
         }
     }
+    window.__initialCloudFetchDone = true;
 }
 
 // 简单的气泡提示工具（如果 script.js 以前没有注入则这里挂载）

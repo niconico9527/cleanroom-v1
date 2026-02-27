@@ -67,10 +67,13 @@
                         <div id="currentConfigStatus" style="font-size: 13px; color: #10b981; margin-top: 6px;">🟢
                             当前状态：已使用本地系统缓存价格库</div>
                     </div>
-                    <div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <button class="btn btn-primary"
+                            style="background-color: #3b82f6; color: white; padding: 10px 20px;"
+                            onclick="manualFetchCloudConfig()">🌐 手动同步云端最新价格</button>
                         <input type="file" id="priceUpload" accept=".crm,.json" style="display: none;"
                             onchange="handleImportPrices(event)">
-                        <button class="btn btn-import" style="padding: 10px 20px;"
+                        <button class="btn btn-import" style="padding: 10px 20px; margin-left: 0;"
                             onclick="document.getElementById('priceUpload').click()">🔄 从本地加载公司最新价格数据 (*.crm)</button>
                     </div>
                 </div>
