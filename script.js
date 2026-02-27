@@ -38,7 +38,14 @@ const basisOptions = [
 window.onload = function () {
     initBasisCheckboxes();
     initAdminLevelSelect();
-    addRoom();
+
+    // 启动时优先恢复草稿箱数据
+    const restored = restoreDraft();
+    if (!restored) {
+        addRoom();
+    } else {
+        calculateAll();
+    }
 };
 
 function initBasisCheckboxes() {
@@ -315,11 +322,89 @@ function addRoom(importName = '', importLevel = '', importArea = '') {
     `;
 
     tbody.appendChild(tr);
+
+    // 回车键全自动新增的新键盘流
+    const areaInput = tr.querySelector('.room-area');
+    areaInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addRoom();
+            // 新增后，焦点自动跳转到最后一个新生成的房间名称输入框内
+            const allRooms = document.querySelectorAll('.room-group');
+            const newRoom = allRooms[allRooms.length - 1];
+            if (newRoom) newRoom.querySelector('.room-name').focus();
+        }
+    });
+
     handleStandardChange();
 }
 
+// 展开/折叠全部明细逻辑
+let allRoomsCollapsed = false;
+function toggleAllRoomsCollapse() {
+    allRoomsCollapsed = !allRoomsCollapsed;
+    document.querySelectorAll('.room-group').forEach(row => {
+        if (allRoomsCollapsed) {
+            row.classList.add('collapsed');
+        } else {
+            row.classList.remove('collapsed');
+        }
+    });
+}
+
+let lastDeletedRoomData = null;
+
 function removeRoom(rowId) {
-    document.getElementById(rowId).remove();
+    const tr = document.getElementById(rowId);
+    if (!tr) return;
+
+    // 删除前，保存房间的数据用于撤销机制
+    const roomName = tr.querySelector('.room-name').value;
+    const roomLevel = tr.querySelector('.room-level').value;
+    const area = tr.querySelector('.room-area').value;
+
+    let checks = {}; let manuals = {};
+    tr.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        const cls = Array.from(cb.classList).find(c => c.startsWith('chk-'));
+        if (cls) checks[cls.replace('chk-', '')] = cb.checked;
+    });
+    tr.querySelectorAll('.pt-input').forEach(input => {
+        if (input.dataset.locked === "true") {
+            const cls = Array.from(input.classList).find(c => c.startsWith('in-'));
+            if (cls) manuals[cls.replace('in-', '')] = input.value;
+        }
+    });
+
+    lastDeletedRoomData = { roomName, roomLevel, area, checks, manuals };
+
+    tr.remove();
+    calculateAll();
+
+    showUndoToast(`已删除房间【${roomName}】`, undoDeleteRoom);
+}
+
+function undoDeleteRoom() {
+    if (!lastDeletedRoomData) return;
+    const r = lastDeletedRoomData;
+    addRoom(r.roomName, r.roomLevel, r.area);
+    const tr = document.getElementById(`room_row_${roomCount}`);
+
+    if (r.checks) {
+        for (let k in r.checks) {
+            const cb = tr.querySelector(`.chk-${k}`);
+            if (cb) cb.checked = r.checks[k];
+        }
+    }
+    if (r.manuals) {
+        for (let k in r.manuals) {
+            const input = tr.querySelector(`.in-${k}`);
+            if (input) {
+                input.value = r.manuals[k];
+                handleManualEdit(input);
+            }
+        }
+    }
+    lastDeletedRoomData = null;
     calculateAll();
 }
 
@@ -628,7 +713,36 @@ function calculateAll() {
         }
     });
 
-    document.getElementById('grandTotal').innerText = `¥ ${currentGrandTotal.toFixed(2)}`;
+    animateGrandTotal(currentGrandTotal);
+    saveDraft(); // 每次计算完毕后触发一次草稿箱保存
+}
+
+// === 数字滚动动画逻辑 ===
+let lastGrandTotal = 0;
+let grandTotalAnimId = null;
+
+function animateGrandTotal(endVal) {
+    const obj = document.getElementById('grandTotal');
+    const startVal = lastGrandTotal;
+    const duration = 400; // 400ms动画时长
+    let startTimestamp = null;
+
+    cancelAnimationFrame(grandTotalAnimId);
+
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const currentVal = startVal + progress * (endVal - startVal);
+        obj.innerText = '¥ ' + currentVal.toFixed(2);
+
+        if (progress < 1) {
+            grandTotalAnimId = requestAnimationFrame(step);
+        } else {
+            lastGrandTotal = endVal;
+            obj.innerText = '¥ ' + endVal.toFixed(2);
+        }
+    };
+    grandTotalAnimId = requestAnimationFrame(step);
 }
 
 function exportToExcel() {
@@ -724,10 +838,15 @@ function exportToExcel() {
 }
 
 // --- 新增：一键清空表单功能 ---
+let lastClearedDraft = null;
+
 function clearAllData() {
     if (!confirm("确定要清空所有已填写的房间和配置，重新开始吗？")) {
         return;
     }
+
+    // 存入彻底清空前的状态
+    lastClearedDraft = localStorage.getItem('cleanroom_draft_v1');
 
     document.getElementById('industrySelect').selectedIndex = 0;
     document.getElementById('standardSelect').selectedIndex = 0;
@@ -743,4 +862,116 @@ function clearAllData() {
 
     addRoom();
     handleStandardChange();
+
+    showUndoToast("已一键清空所有数据！", undoClearAll);
+}
+
+function undoClearAll() {
+    if (!lastClearedDraft) return;
+    localStorage.setItem('cleanroom_draft_v1', lastClearedDraft);
+    restoreDraft();
+    lastClearedDraft = null;
+    calculateAll();
+}
+
+// === 草稿箱核心逻辑与 Toast 提醒 ===
+
+function saveDraft() {
+    const dataToSave = {
+        industry: document.getElementById('industrySelect').value,
+        standard: document.getElementById('standardSelect').value,
+        discount: document.getElementById('discountFactor').value,
+        rooms: []
+    };
+
+    document.querySelectorAll('.room-group').forEach(tr => {
+        const roomName = tr.querySelector('.room-name').value;
+        const roomLevel = tr.querySelector('.room-level').value;
+        const area = tr.querySelector('.room-area').value;
+
+        let checks = {};
+        let manuals = {};
+        tr.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const cls = Array.from(cb.classList).find(c => c.startsWith('chk-'));
+            if (cls) checks[cls.replace('chk-', '')] = cb.checked;
+        });
+        tr.querySelectorAll('.pt-input').forEach(input => {
+            if (input.dataset.locked === "true") {
+                const cls = Array.from(input.classList).find(c => c.startsWith('in-'));
+                if (cls) manuals[cls.replace('in-', '')] = input.value;
+            }
+        });
+        dataToSave.rooms.push({ roomName, roomLevel, area, checks, manuals });
+    });
+
+    localStorage.setItem('cleanroom_draft_v1', JSON.stringify(dataToSave));
+}
+
+function restoreDraft() {
+    const saved = localStorage.getItem('cleanroom_draft_v1');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+
+            document.getElementById('industrySelect').value = data.industry || '食品';
+            document.getElementById('standardSelect').value = data.standard || 'ISO';
+            document.getElementById('discountFactor').value = data.discount || 1.0;
+
+            if (data.rooms && data.rooms.length > 0) {
+                document.getElementById('roomBody').innerHTML = '';
+                roomCount = 0;
+
+                data.rooms.forEach(r => {
+                    addRoom(r.roomName, r.roomLevel, r.area);
+                    const tr = document.getElementById(`room_row_${roomCount}`);
+
+                    if (r.checks) {
+                        for (let k in r.checks) {
+                            const cb = tr.querySelector(`.chk-${k}`);
+                            if (cb) cb.checked = r.checks[k];
+                        }
+                    }
+                    if (r.manuals) {
+                        for (let k in r.manuals) {
+                            const input = tr.querySelector(`.in-${k}`);
+                            if (input) {
+                                input.value = r.manuals[k];
+                                handleManualEdit(input);
+                            }
+                        }
+                    }
+                });
+                return true;
+            }
+        } catch (e) {
+            console.error("恢复草稿失败", e);
+        }
+    }
+    return false;
+}
+
+function showUndoToast(msg, callback) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast-msg';
+    toast.innerHTML = `<span>${msg}</span> <button>撤销</button>`;
+
+    const btn = toast.querySelector('button');
+    let isClicked = false;
+    btn.onclick = () => {
+        isClicked = true;
+        callback();
+        toast.remove();
+    };
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        if (!isClicked && document.body.contains(toast)) {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 6000);
 }

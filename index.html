@@ -88,7 +88,8 @@
                             <th style="width: 110px;">洁净度等级<br><button class="th-btn-small"
                                     onclick="fillDownRoomLevel()">↓ 向下填充</button></th>
                             <th style="width: 70px;">面积(m²)</th>
-                            <th>检测项目与点数配置</th>
+                            <th>检测项目与点数配置<br><button class="btn-toggle-collapse" onclick="toggleAllRoomsCollapse()">↕️
+                                    展开/折叠所有明细</button></th>
                             <th style="width: 110px;">房间总报价</th>
                             <th style="width: 60px;">操作</th>
                         </tr>
@@ -138,6 +139,9 @@
         </div>
 
     </div>
+
+    <!-- 顶层气泡提示容器 -->
+    <div id="toast-container"></div>
 
     <script src="script.js"></script>
 </body>
