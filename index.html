@@ -17,6 +17,12 @@
         <div class="page-header">
             <i class="ph ph-flask header-icon"></i>
             <h1>洁净室自动报价系统</h1>
+            <div style="margin-left: auto; display: flex; align-items: center;">
+                <a href="说明文件/index.html" target="_blank"
+                    style="color: #ffffff; text-decoration: none; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 14px; background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 6px; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.2);">
+                    <i class="ph ph-book-open" style="font-size: 16px;"></i> 新版说明文档
+                </a>
+            </div>
         </div>
 
         <div id="moduleSales">
@@ -49,10 +55,6 @@
                     <input type="number" id="discountFactor" value="1.0" step="0.1" oninput="calculateAll()"
                         title="1.0为原价，0.8为8折，1.2为上浮20%" class="discount-input">
 
-                    <span class="toolbar-spacer"></span>
-                    <button class="btn btn-danger" onclick="clearAllData()">
-                        <i class="ph ph-trash"></i> 一键清空
-                    </button>
                 </div>
 
                 <!-- 卡片2: 依据选择区 -->
@@ -82,7 +84,8 @@
                         <button class="btn btn-primary" onclick="manualFetchCloudConfig()">
                             <i class="ph ph-cloud-arrow-down" style="font-size: 16px;"></i> 同步云端最新数据
                         </button>
-                        <input type="file" id="priceUpload" accept=".crm,.json" style="display: none;" onchange="handleImportPrices(event)">
+                        <input type="file" id="priceUpload" accept=".crm,.json" style="display: none;"
+                            onchange="handleImportPrices(event)">
                         <button class="btn btn-secondary" onclick="document.getElementById('priceUpload').click()">
                             <i class="ph ph-folder-arrow-down" style="font-size: 16px;"></i> 导入本地数据文件
                         </button>
@@ -102,14 +105,19 @@
                             <i class="ph ph-file-xls" style="font-size: 16px;"></i> 智能表格导入
                         </button>
 
-                        <a href="javascript:void(0);" onclick="downloadImportTemplate()" class="template-link">
-                            <i class="ph ph-download-simple"></i>下载标准模板
-                        </a>
+                        <button class="btn btn-secondary" onclick="downloadImportTemplate()">
+                            <i class="ph ph-download-simple" style="font-size: 16px;"></i> 下载标准模板
+                        </button>
                     </div>
 
-                    <button class="btn btn-export" onclick="exportToExcel()">
-                        <i class="ph ph-download-simple" style="font-size: 16px;"></i> 一键导出报价单
-                    </button>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <button class="btn btn-danger" onclick="clearAllData()">
+                            <i class="ph ph-trash" style="font-size: 16px;"></i> 清空
+                        </button>
+                        <button class="btn btn-export" onclick="exportToExcel()">
+                            <i class="ph ph-download-simple" style="font-size: 16px;"></i> 导出报价
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 房间表格 -->
@@ -118,7 +126,8 @@
                         <tr>
                             <th style="width: 90px;">房间名称</th>
                             <th style="width: 110px;">洁净度等级<br><button class="th-btn-small"
-                                    onclick="fillDownRoomLevel()"><i class="ph ph-arrow-down"></i> 向下填充</button></th>
+                                    onclick="fillDownRoomLevel()"><i class="ph ph-arrow-down"></i> 向下填充</button>
+                            </th>
                             <th style="width: 70px;">面积(m²)</th>
                             <th>检测项目与点数配置<br><button class="btn-toggle-collapse" onclick="toggleAllRoomsCollapse()"><i
                                         class="ph ph-arrows-in-line-vertical"></i>
