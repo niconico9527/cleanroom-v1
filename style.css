@@ -78,49 +78,39 @@ body {
     padding: 40px 32px;
 }
 
-/* --- 品牌页头 — SaaS 简洁风格 --- */
+/* --- 顶部全宽导航栏 (Navbar) --- */
 .page-header {
-    background: transparent;
-    color: var(--text-main);
-    padding: 0 0 24px 0;
-    margin-bottom: 32px;
+    background: #ffffff;
+    width: 100%;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px 32px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    box-shadow: none;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-color);
+    gap: 16px;
 }
 
 .page-header h1 {
     margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--text-main);
 }
 
-.page-header .header-icon {
-    font-size: 24px;
-    opacity: 0.7;
-    color: var(--primary);
-}
-
-/* 页头文档链接 — SaaS 风格 */
-.page-header a {
-    color: var(--text-muted) !important;
-    background: transparent !important;
-    border: 1px solid var(--border-color) !important;
-    padding: 7px 14px !important;
-    border-radius: var(--radius-md) !important;
-    font-size: 13px !important;
-    transition: all 0.2s !important;
-}
-
-.page-header a:hover {
-    background: var(--bg-hover) !important;
-    color: var(--text-main) !important;
-    border-color: var(--text-faint) !important;
+.header-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 /* --- 通用卡片 --- */
@@ -163,7 +153,7 @@ h2 {
 }
 
 h2 i {
-    color: var(--text-muted);
+    color: var(--primary);
 }
 
 /* --- 模块切换 --- */
@@ -274,11 +264,9 @@ h2 i {
 
 .basis-container {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    min-width: 320px;
+    background: var(--primary-50);
+    border: 1px solid var(--primary-light);
     border-radius: var(--radius-lg);
     padding: 20px;
     box-shadow: var(--shadow-sm);
@@ -286,20 +274,20 @@ h2 i {
 
 .basis-container>label:first-child {
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--primary-dark);
     font-size: 13px;
     padding-bottom: 10px;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--primary-light);
     margin-bottom: 4px;
 }
 
 .multi-select-box {
     height: 160px;
     overflow-y: auto;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--primary-light);
     border-radius: var(--radius-md);
     padding: 8px;
-    background: var(--bg-muted);
+    background: #ffffff;
 }
 
 .multi-select-box::-webkit-scrollbar {
@@ -394,16 +382,17 @@ h2 i {
     align-items: center;
 }
 
-/* --- 操作栏 — SaaS 简洁 --- */
+/* --- 操作栏 — SaaS 独立悬浮卡片 --- */
 .action-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: transparent;
-    padding: 0;
+    background: var(--bg-card);
+    padding: 16px 24px;
     margin-bottom: 24px;
-    border: none;
-    border-radius: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     flex-wrap: wrap;
     gap: 12px;
 }
@@ -487,6 +476,18 @@ h2 i {
 .btn-ghost:hover {
     background: var(--bg-hover);
     color: var(--text-main);
+}
+
+/* 品牌色 Ghost 按钮 — 带有 Indigo 质感的透明无边框 */
+.btn-ghost-primary {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid transparent;
+}
+
+.btn-ghost-primary:hover {
+    background: var(--primary-50);
+    color: var(--primary-dark);
 }
 
 /* 按钮禁用态 */
