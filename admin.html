@@ -7,96 +7,66 @@
     <title>洁净系统底价管理后台</title>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            background-color: #f8fafc;
-        }
-
-        .container {
-            max-width: 900px;
-            margin-top: 40px;
-        }
-
-        .top-banner {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 20px;
-            margin-bottom: 20px;
-        }
-
-        .top-banner h2 {
-            border: none;
-            margin: 0;
-            padding: 0;
-        }
-    </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="top-banner"
-            style="flex-direction: column; align-items: flex-start; gap: 20px; border-bottom: none; padding-bottom: 0;">
-            <h2 style="font-size: 22px; display: flex; align-items: center; gap: 8px;"><i
-                    class="ph ph-sliders-horizontal"></i> 洁净检测 - 阶梯单价管理中心</h2>
-            <div style="display: flex; gap: 20px; width: 100%; margin-bottom: 10px;">
-                <!-- 云端协作区 -->
-                <div
-                    style="flex: 1; background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: 4px; border-left: 5px solid #3b82f6;">
-                    <div
-                        style="font-weight: 600; color: #1d4ed8; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-cloud-check"></i> 云端发布与同步区
-                    </div>
-                    <div style="display: flex; gap: 12px; margin-bottom: 10px;">
-                        <button class="btn" style="background-color: #3b82f6; color: white; padding: 10px 16px;"
-                            onclick="adminPullFromCloud()"><i class="ph ph-cloud-arrow-down"
-                                style="font-size: 16px; margin-right: 4px;"></i> 拉取云端数据</button>
-                        <button id="btnCloudPush" class="btn btn-export"
-                            style="padding: 10px 16px; border: 1px solid #10b981;" onclick="pushToCloud()"><i
-                                class="ph ph-rocket-launch" style="font-size: 16px; margin-right: 4px;"></i>
-                            发布至云端</button>
-                    </div>
-                    <div id="currentConfigStatus"
-                        style="font-size: 13px; color: #10b981; display: flex; align-items: center; gap: 4px;">
-                        <i class="ph-fill ph-check-circle"></i>
-                        当前状态：已使用本地系统缓存价格库
-                    </div>
-                </div>
+    <div class="container admin-container">
+        <!-- 品牌页头 -->
+        <div class="page-header">
+            <i class="ph ph-sliders-horizontal header-icon"></i>
+            <h1>洁净检测 - 阶梯单价管理中心</h1>
+        </div>
 
-                <!-- 本地离线区 -->
-                <div
-                    style="flex: 1; background: #f8f9fa; border: 1px solid #e1e4e8; padding: 16px; border-radius: 4px; border-left: 5px solid #6c757d;">
-                    <div
-                        style="font-weight: 600; color: #495057; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-hard-drives"></i> 离线配置包管理区
-                    </div>
-                    <div style="display: flex; gap: 12px;">
-                        <input type="file" id="adminPriceUpload" accept=".crm,.json" style="display: none;"
-                            onchange="importAdminEncryptedConfig(event)">
-                        <button class="btn" style="background-color: #64748b; color: white; padding: 10px 16px;"
-                            onclick="document.getElementById('adminPriceUpload').click()"><i class="ph ph-folder-open"
-                                style="font-size: 16px; margin-right: 4px;"></i> 导入本地数据</button>
-                        <button class="btn" style="background-color: #475569; color: white; padding: 10px 16px;"
-                            onclick="exportEncryptedConfig()"><i class="ph ph-download-simple"
-                                style="font-size: 16px; margin-right: 4px;"></i> 导出数据到本地</button>
-                    </div>
+        <!-- 云端 / 离线 双卡片区 -->
+        <div class="admin-cards-row">
+            <!-- 云端协作区 -->
+            <div class="sync-card">
+                <div class="sync-card-title">
+                    <i class="ph ph-cloud-check"></i> 云端发布与同步区
+                </div>
+                <div class="sync-card-actions">
+                    <button class="btn btn-primary" onclick="adminPullFromCloud()">
+                        <i class="ph ph-cloud-arrow-down" style="font-size: 16px;"></i> 拉取云端数据
+                    </button>
+                    <button id="btnCloudPush" class="btn btn-export" onclick="pushToCloud()">
+                        <i class="ph ph-rocket-launch" style="font-size: 16px;"></i> 发布至云端
+                    </button>
+                </div>
+                <div id="currentConfigStatus" class="info-card-status">
+                    <i class="ph-fill ph-check-circle"></i>
+                    当前状态：已使用本地系统缓存价格库
+                </div>
+            </div>
+
+            <!-- 本地离线区 -->
+            <div class="offline-card">
+                <div class="offline-card-title">
+                    <i class="ph ph-hard-drives"></i> 离线配置包管理区
+                </div>
+                <div class="offline-card-actions">
+                    <input type="file" id="adminPriceUpload" accept=".crm,.json" style="display: none;"
+                        onchange="importAdminEncryptedConfig(event)">
+                    <button class="btn btn-admin-dark" onclick="document.getElementById('adminPriceUpload').click()">
+                        <i class="ph ph-folder-open" style="font-size: 16px;"></i> 导入本地数据
+                    </button>
+                    <button class="btn btn-admin-darker" onclick="exportEncryptedConfig()">
+                        <i class="ph ph-download-simple" style="font-size: 16px;"></i> 导出数据到本地
+                    </button>
                 </div>
             </div>
         </div>
 
+        <!-- 管理员配置面板 -->
         <div class="admin-panel" id="moduleAdmin">
             <div class="admin-header">
                 <label>配置目标级别：</label>
                 <select id="adminClassLevel" onchange="loadAdminPricesToUI()"></select>
-                <button class="btn" onclick="openCopyModal()"
-                    style="margin-left: 15px; background-color: #f8f9fa; color: #24292e; border: 1px solid #d1d5da; font-weight: 600; padding: 8px 16px; border-radius: 6px;"><i
-                        class="ph ph-copy" style="font-size: 16px; margin-right: 4px; vertical-align: text-bottom;"></i>
-                    复制当前配置到其它级别...</button>
+                <button class="btn btn-copy-config" onclick="openCopyModal()">
+                    <i class="ph ph-copy" style="font-size: 16px;"></i> 复制当前配置到其它级别...
+                </button>
             </div>
 
-            <p style="color: #c0392b; font-size: 13px;">操作指南：首先选择上方的【级别】，下方表格将显示该级别对应的单点底价方案。输入第一行数据后可使用“向下填充”按钮快速录入。
-            </p>
+            <p class="admin-tip">操作指南：首先选择上方的【级别】，下方表格将显示该级别对应的单点底价方案。输入第一行数据后可使用"向下填充"按钮快速录入。</p>
 
             <table class="admin-table">
                 <thead>
@@ -122,18 +92,16 @@
                 <tbody id="adminPriceBody">
                 </tbody>
             </table>
-
-            <!-- 底部保存按钮已重构至顶部工具区，输入过程会进行本地静默保存保护 -->
         </div>
     </div>
 
     <!-- 复制配置的高级弹窗 -->
     <div id="copyModal" class="modal-overlay" style="display:none;">
         <div class="modal-content">
-            <h3>复制配置到特定级别</h3>
+            <h3><i class="ph ph-copy" style="margin-right: 8px;"></i>复制配置到特定级别</h3>
             <div class="modal-select-all">
                 <label style="cursor: pointer;"><input type="checkbox" id="chkAllLevels"
-                        onchange="toggleAllModalLevels(this)"> <b style="color: #2563eb;">全选所有级别</b></label>
+                        onchange="toggleAllModalLevels(this)"> <b style="color: var(--brand-600);">全选所有级别</b></label>
             </div>
             <div class="level-groups" id="levelGroupsContainer">
                 <!-- 由 JavaScript 动态生成分组 -->
@@ -144,6 +112,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast 容器 -->
+    <div id="toast-container"></div>
 
     <script src="admin.js"></script>
 </body>

@@ -13,13 +13,17 @@
 <body>
 
     <div class="container">
-        <h1>洁净室自动报价系统</h1>
+        <!-- 品牌页头 -->
+        <div class="page-header">
+            <i class="ph ph-flask header-icon"></i>
+            <h1>洁净室自动报价系统</h1>
+        </div>
 
-        <!-- 移除了管理员选项卡，纯净业务端 -->
         <div id="moduleSales">
             <div class="section">
-                <h2>客户需求配置与自动核算</h2>
+                <h2><i class="ph ph-gear-six"></i> 客户需求配置与自动核算</h2>
 
+                <!-- 卡片1: 工具栏 -->
                 <div class="top-toolbar">
                     <label>行业类型：</label>
                     <select id="industrySelect">
@@ -33,7 +37,7 @@
                         <option value="无特殊要求">无特殊要求</option>
                     </select>
 
-                    <label style="margin-left: 15px;">点数执行标准：</label>
+                    <label>点数执行标准：</label>
                     <select id="standardSelect" onchange="handleStandardChange()">
                         <option value="ISO">ISO 14644-1 (国际标准)</option>
                         <option value="GB50591">GB 50591 (洁净室施工及验收规范)</option>
@@ -41,15 +45,17 @@
                         <option value="GB16292_OLD">GB16292旧版</option>
                     </select>
 
-                    <label style="margin-left: 15px; color: #c0392b; font-weight: bold;">报价折扣：</label>
+                    <label class="discount-label">报价折扣：</label>
                     <input type="number" id="discountFactor" value="1.0" step="0.1" oninput="calculateAll()"
-                        title="1.0为原价，0.8为8折，1.2为上浮20%" style="width: 50px; text-align: center; border-color: #c0392b;">
+                        title="1.0为原价，0.8为8折，1.2为上浮20%" class="discount-input">
 
-                    <button class="btn btn-danger" onclick="clearAllData()" style="margin-left: auto;">
+                    <span class="toolbar-spacer"></span>
+                    <button class="btn btn-danger" onclick="clearAllData()">
                         <i class="ph ph-trash"></i> 一键清空
                     </button>
                 </div>
 
+                <!-- 卡片2: 依据选择区 -->
                 <div class="basis-wrapper">
                     <div class="basis-container">
                         <label>检测依据 (可多选/可自定义)：</label>
@@ -61,42 +67,42 @@
                     </div>
                 </div>
 
-                <!-- 独立的新价格库导入信息条 (UI 排版优化) -->
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 24px; margin-top: 24px; display: flex; align-items: center; justify-content: space-between;">
+                <!-- 卡片3: 数据源信息条 -->
+                <div class="info-card">
                     <div>
-                        <strong style="color: #1f2937; font-size: 15px; display: flex; align-items: center; gap: 6px;">
-                            <i class="ph ph-calculator" style="font-size: 18px; color: #2563eb;"></i> 当前价格数据源：
-                        </strong>
-                        <div id="currentConfigStatus" style="font-size: 13px; color: #10b981; margin-top: 8px; display: flex; align-items: center; gap: 4px;">
+                        <div class="info-card-title">
+                            <i class="ph ph-calculator"></i> 当前价格数据源：
+                        </div>
+                        <div class="info-card-status" id="currentConfigStatus">
                             <i class="ph-fill ph-check-circle"></i>
                             当前状态：已使用本地系统缓存价格库
                         </div>
                     </div>
-                    <div style="display: flex; gap: 12px; align-items: center;">
+                    <div class="info-card-actions">
                         <button class="btn btn-primary" onclick="manualFetchCloudConfig()">
                             <i class="ph ph-cloud-arrow-down" style="font-size: 16px;"></i> 同步云端最新数据
                         </button>
                         <input type="file" id="priceUpload" accept=".crm,.json" style="display: none;" onchange="handleImportPrices(event)">
-                        <button class="btn btn-import" style="margin-left: 0;" onclick="document.getElementById('priceUpload').click()">
+                        <button class="btn btn-secondary" onclick="document.getElementById('priceUpload').click()">
                             <i class="ph ph-folder-arrow-down" style="font-size: 16px;"></i> 导入本地数据文件
                         </button>
                     </div>
                 </div>
 
+                <!-- 卡片4: 操作栏 -->
                 <div class="action-bar">
-                    <div style="display: flex; align-items: center;">
+                    <div class="action-bar-left">
                         <button class="btn btn-success" onclick="addRoom()">
                             <i class="ph ph-plus" style="font-weight: bold;"></i> 添加房间
                         </button>
 
                         <input type="file" id="importExcelInput" style="display: none;" accept=".xlsx, .xls, .csv"
                             onchange="handleImportExcel(event)">
-                        <button class="btn btn-import" onclick="document.getElementById('importExcelInput').click()">
+                        <button class="btn btn-secondary" onclick="document.getElementById('importExcelInput').click()">
                             <i class="ph ph-file-xls" style="font-size: 16px;"></i> 智能表格导入
                         </button>
 
-                        <a href="javascript:void(0);" onclick="downloadImportTemplate()"
-                            style="margin-left: 16px; font-size: 13px; color: #3b82f6; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                        <a href="javascript:void(0);" onclick="downloadImportTemplate()" class="template-link">
                             <i class="ph ph-download-simple"></i>下载标准模板
                         </a>
                     </div>
@@ -106,6 +112,7 @@
                     </button>
                 </div>
 
+                <!-- 房间表格 -->
                 <table id="roomTable">
                     <thead>
                         <tr>
@@ -124,6 +131,7 @@
                     </tbody>
                 </table>
 
+                <!-- 总计区域 -->
                 <div class="summary-box">
                     系统汇总总计 : <span class="total-price" id="grandTotal">¥ 0.00</span>
                 </div>

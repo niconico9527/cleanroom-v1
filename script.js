@@ -574,8 +574,8 @@ function handleImportExcel(event) {
     const reader = new FileReader();
     reader.onload = function (e) {
         try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
+            const data = e.target.result;
+            const workbook = XLSX.read(data, { type: 'binary' });
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
 
@@ -639,13 +639,13 @@ function handleImportExcel(event) {
                 alert("未读取到有效的房间数据，请检查表格内容。");
             }
         } catch (error) {
-            alert("解析文件失败！请确保上传的是 Excel 文件。");
+            alert(`解析文件失败！请确保上传的是 Excel 文件。\n\n具体报错信息供排查: ${error.message || error}`);
             console.error(error);
         } finally {
             event.target.value = '';
         }
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsBinaryString(file);
 }
 
 const calcRules = {

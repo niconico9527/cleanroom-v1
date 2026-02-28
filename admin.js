@@ -36,7 +36,7 @@ window.onload = function () {
     });
 
     loadAdminPricesToUI();
-    
+
     // 初始化显示当前数据版本状态
     updateConfigStatus();
 };
@@ -45,7 +45,7 @@ window.onload = function () {
 function updateConfigStatus() {
     const statusEl = document.getElementById('currentConfigStatus');
     if (!statusEl) return;
-    
+
     const meta = localStorage.getItem('cleanroomPricesV10_Meta');
     if (meta) {
         try {
@@ -264,23 +264,23 @@ function importAdminEncryptedConfig(event) {
                 alert("导入失败：非本平台派发的有效价格配置包。");
                 return;
             }
-// 直接覆写本地 Admin 全局配置
-localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
+            // 直接覆写本地 Admin 全局配置
+            localStorage.setItem('cleanroomPricesV10', JSON.stringify(parsedData.data));
 
-// 如果有时间戳，也保存到 Meta
-if (parsedData.timestamp) {
-    localStorage.setItem('cleanroomPricesV10_Meta', JSON.stringify({ timestamp: parsedData.timestamp }));
-} else {
-    // 清除云端同步标记，表示这是本地导入的数据
-    localStorage.removeItem('cleanroomPricesV10_Meta');
-}
+            // 如果有时间戳，也保存到 Meta
+            if (parsedData.timestamp) {
+                localStorage.setItem('cleanroomPricesV10_Meta', JSON.stringify({ timestamp: parsedData.timestamp }));
+            } else {
+                // 清除云端同步标记，表示这是本地导入的数据
+                localStorage.removeItem('cleanroomPricesV10_Meta');
+            }
 
-// 刷新UI和状态
-loadAdminPricesToUI();
-updateConfigStatus();
+            // 刷新UI和状态
+            loadAdminPricesToUI();
+            updateConfigStatus();
 
-const importTime = parsedData.timestamp ? new Date(parsedData.timestamp).toLocaleString() : '未知时间';
-alert(`✅ 已成功解析并导入价格包！\n文件时间：${importTime}\n现在您可以基于它在此继续二次编辑。`);
+            const importTime = parsedData.timestamp ? new Date(parsedData.timestamp).toLocaleString() : '未知时间';
+            alert(`✅ 已成功解析并导入价格包！\n文件时间：${importTime}\n现在您可以基于它在此继续二次编辑。`);
             alert(`✅ 已成功解析并导入您选择的旧版价格包！现在您可以基于它在此继续二次编辑。`);
 
         } catch (error) {
@@ -319,7 +319,7 @@ async function getCloudFileInfo() {
 
 // 重新从云端反向全量同步配置
 async function adminPullFromCloud() {
-    const url = `https://gitee.com/api/v5/repos/${GITEE_CONFIG.owner}/${GITEE_CONFIG.repo}/contents/${GITEE_CONFIG.path}?t=${new Date().getTime()}`;
+    const url = `https://gitee.com/api/v5/repos/${GITEE_CONFIG.owner}/${GITEE_CONFIG.repo}/contents/${GITEE_CONFIG.path}?access_token=${GITEE_CONFIG.token}&t=${new Date().getTime()}`;
     try {
         showToast("正在查询云端配置...", "info");
         const response = await fetch(url);
