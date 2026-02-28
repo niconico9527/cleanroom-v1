@@ -32,7 +32,13 @@ const basisOptions = [
     "GB/T 13554 高效空气过滤器", "YY/T 0033 无菌医疗器具生产管理规范",
     "GB 50472 电子工业洁净厂房设计规范", "GB 50462 数据中心基础设施施工及验收规范",
     "GB 50243 通风与空调工程施工质量验收规范", "药品生产质量管理规范（2010年修订)",
-    "中华人民共和国药典（2020年版）", "ISO 14644-1", "ISO 14644-3"
+    "中华人民共和国药典（2020年版）", "ISO 14644-1", "ISO 14644-3",
+    "GB 50687 食品工业洁净用房建筑技术规范",
+    "GB 15979 一次性使用卫生用品卫生要求",
+    "GB 29923 特殊医学用途配方食品企业良好生产规范",
+    "DB32/T 972 实验动物笼器具独立通气笼盒（IVC）系统",
+    "DB32/T 2730 实验动物笼器具集中排风通气笼盒系统",
+    "中华人民共和国药典（2025年版）"
 ];
 
 const GITEE_PULL_URL = "https://gitee.com/zhang_jia_shu/cleanroom-config/raw/master/latest_price.json";
@@ -302,6 +308,19 @@ function handleStandardChange() {
     const std = document.getElementById('standardSelect').value;
     const isPureGB = (std === 'GB');
     const isGB16292Old = (std === 'GB16292_OLD');
+    const isGB50333 = (std === 'GB50333');
+    const isGB50591 = (std === 'GB50591');
+
+    // 需求3：控制 GB50591 查表模式开关的显示/隐藏
+    const tableLabel = document.getElementById('gb50591TableLabel');
+    if (tableLabel) {
+        tableLabel.style.display = isGB50591 ? 'inline-flex' : 'none';
+        // 切换到其他标准时自动取消勾选
+        if (!isGB50591) {
+            const tableMode = document.getElementById('gb50591TableMode');
+            if (tableMode) tableMode.checked = false;
+        }
+    }
 
     const microbioCells = document.querySelectorAll('.cell-microbio');
 
@@ -318,7 +337,17 @@ function handleStandardChange() {
         }
     });
 
-    const allowedLevels = isGB16292Old ? ["100级", "10000级", "100000级", "300000级"] : combinedLevels;
+    // 各标准的允许级别
+    let allowedLevels;
+    if (isGB16292Old) {
+        allowedLevels = ["100级", "10000级", "100000级", "300000级"];
+    } else if (isGB50333) {
+        // 需求8：医院手术部使用 I~IV 级
+        allowedLevels = ["I级", "II级", "III级", "IV级"];
+    } else {
+        allowedLevels = combinedLevels;
+    }
+
     const levelSelects = document.querySelectorAll('.room-level');
 
     levelSelects.forEach(select => {
@@ -379,7 +408,14 @@ function addRoom(importName = '', importLevel = '', importArea = '') {
     let defaultArea = importArea ? importArea : 50;
 
     const currentStd = document.getElementById('standardSelect') ? document.getElementById('standardSelect').value : 'ISO';
-    const allowedLevels = (currentStd === 'GB16292_OLD') ? ["100级", "10000级", "100000级", "300000级"] : combinedLevels;
+    let allowedLevels;
+    if (currentStd === 'GB16292_OLD') {
+        allowedLevels = ["100级", "10000级", "100000级", "300000级"];
+    } else if (currentStd === 'GB50333') {
+        allowedLevels = ["I级", "II级", "III级", "IV级"];
+    } else {
+        allowedLevels = combinedLevels;
+    }
 
     let levelSelectHtml = `<select class="room-level" onchange="calculateAll()">`;
     allowedLevels.forEach(lvl => {
@@ -611,15 +647,42 @@ const calcRules = {
         temphum: (a, l) => Math.max(2, Math.ceil(a / 100)),
         noise: (a, l) => Math.ceil(a / 100),
         lux: (a, l) => Math.ceil(a / 25),
-        pressure: (a, l) => 1, air: (a, l) => 1, microbio: (a, l) => 0, fixed: (a, l) => 1
+        pressure: (a, l) => 1,
+        air: (a, l) => calcRules["GB16292_OLD"].air(a, l), // 需求5：换气复用旧版16292
+        microbio: (a, l) => 0, fixed: (a, l) => 1
     },
     "GB50591": {
-        particle: (a, l) => Math.ceil(Math.sqrt(a)),
-        temphum: (a, l) => Math.max(2, Math.ceil(a / 100)),
-        noise: (a, l) => a <= 15 ? 1 : 5,
+        particle: (a, l) => {
+            // 需求3：双轨制 — 查表模式 vs 开根号模式
+            const tableMode = document.getElementById('gb50591TableMode');
+            if (!tableMode || !tableMode.checked) {
+                return Math.ceil(Math.sqrt(a));
+            }
+            // 查表模式：表 E.4.2-1 测点数选用表
+            let col = 3; // 默认 8~9级
+            if (l.includes("5") || l.includes("100级")) col = 0;
+            else if (l.includes("6") || l.includes("1000级")) col = 1;
+            else if (l.includes("7") || l.includes("10000级")) col = 2;
+
+            if (a < 10) return [3, 2, 2, 2][col];
+            if (a < 20) return [4, 3, 2, 2][col];
+            if (a < 40) return [8, 6, 2, 2][col];
+            if (a < 100) return [16, 13, 4, 2][col];
+            if (a < 200) return [40, 32, 10, 3][col];
+            if (a < 400) return [80, 63, 20, 6][col];
+            if (a < 1000) return [160, 126, 40, 13][col];
+            if (a < 2000) return [400, 316, 100, 32][col];
+            return [800, 623, 200, 63][col];
+        },
+        temphum: (a, l) => 1, // 需求4：温湿度固定1
+        noise: (a, l) => a >= 15 ? 5 : 1, // 需求4：噪声≥15为5
         lux: (a, l) => a <= 20 ? 2 : Math.ceil(a / 4),
-        pressure: (a, l) => 1, air: (a, l) => 1,
-        microbio: (a, l) => Math.ceil(Math.sqrt(a)),
+        pressure: (a, l) => 1,
+        air: (a, l) => calcRules["GB16292_OLD"].air(a, l), // 需求4：换气复用旧版
+        microbio: (a, l) => {
+            // 需求3：微生物与悬浮粒子同逻辑
+            return calcRules["GB50591"].particle(a, l);
+        },
         fixed: (a, l) => 1
     },
     "ISO": {
@@ -628,10 +691,12 @@ const calcRules = {
             if (a <= 1000) { for (let i = 0; i < t.length; i++) if (a <= t[i].max) return t[i].pts; }
             return Math.ceil(27 * (a / 1000));
         },
-        temphum: (a, l) => Math.max(2, Math.ceil(a / 100)),
-        noise: (a, l) => Math.ceil(a / 100),
-        lux: (a, l) => Math.ceil(a / 25),
-        pressure: (a, l) => 1, air: (a, l) => 1, fixed: (a, l) => 1,
+        temphum: (a, l) => 1, // 需求6：温湿度固定1
+        noise: (a, l) => a >= 15 ? 5 : 1, // 需求6：噪声同旧版
+        lux: (a, l) => a <= 20 ? 2 : Math.ceil(a / 4), // 需求6：照度同旧版
+        pressure: (a, l) => 1,
+        air: (a, l) => calcRules["GB16292_OLD"].air(a, l), // 需求6：换气复用旧版
+        fixed: (a, l) => 1,
         microbio: (a, l) => {
             const t = [{ max: 2, pts: 1 }, { max: 4, pts: 2 }, { max: 6, pts: 3 }, { max: 8, pts: 4 }, { max: 10, pts: 5 }, { max: 24, pts: 6 }, { max: 28, pts: 7 }, { max: 32, pts: 8 }, { max: 36, pts: 9 }, { max: 52, pts: 10 }, { max: 56, pts: 11 }, { max: 64, pts: 12 }, { max: 68, pts: 13 }, { max: 72, pts: 14 }, { max: 76, pts: 15 }, { max: 104, pts: 16 }, { max: 108, pts: 17 }, { max: 116, pts: 18 }, { max: 148, pts: 19 }, { max: 156, pts: 20 }, { max: 192, pts: 21 }, { max: 232, pts: 22 }, { max: 276, pts: 23 }, { max: 352, pts: 24 }, { max: 436, pts: 25 }, { max: 636, pts: 26 }, { max: 1000, pts: 27 }];
             if (a <= 1000) { for (let i = 0; i < t.length; i++) if (a <= t[i].max) return t[i].pts; }
@@ -671,8 +736,24 @@ const calcRules = {
             if (a >= 200 && a < 400) return Math.ceil(a / 20);
             return Math.ceil(a / 22);
         },
-        temphum: (a, l) => Math.max(2, Math.ceil(a / 100)),
-        noise: (a, l) => a <= 15 ? 1 : 5,
+        temphum: (a, l) => 1, // 需求1：温湿度固定1
+        noise: (a, l) => a >= 15 ? 5 : 1, // 需求2：噪声≥15为5
+        lux: (a, l) => a <= 20 ? 2 : Math.ceil(a / 4),
+        pressure: (a, l) => 1,
+        fixed: (a, l) => 1
+    },
+    // 需求8：GB50333 医院洁净手术部（基于国标第13.3.11条）
+    "GB50333": {
+        particle: (a, l) => {
+            if (l.includes("I级") || l.includes("Ⅰ级")) return 13;
+            if (l.includes("II级") || l.includes("Ⅱ级")) return 9;
+            if (l.includes("III级") || l.includes("Ⅲ级")) return 7;
+            return Math.ceil(Math.sqrt(a)); // IV级及其他降级处理
+        },
+        microbio: (a, l) => calcRules["GB50333"].particle(a, l),
+        air: (a, l) => calcRules["GB16292_OLD"].air(a, l),
+        temphum: (a, l) => 1,
+        noise: (a, l) => a >= 15 ? 5 : 1,
         lux: (a, l) => a <= 20 ? 2 : Math.ceil(a / 4),
         pressure: (a, l) => 1,
         fixed: (a, l) => 1
