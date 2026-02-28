@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>洁净室自动报价系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="style.css">
@@ -13,14 +14,18 @@
 <body>
 
     <div class="container">
-        <!-- 品牌页头 -->
+        <!-- 品牌页头 — SaaS 简洁风格 -->
         <div class="page-header">
-            <i class="ph ph-flask header-icon"></i>
-            <h1>洁净室自动报价系统</h1>
-            <div style="margin-left: auto; display: flex; align-items: center;">
+            <h1>洁净室报价台</h1>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+                <a href="javascript:void(0)"
+                    onclick="var p=prompt('请输入管理员密码：');if(p==='0501')window.open('admin.html','_blank');else if(p!==null)alert('密码错误');"
+                    style="text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-lock-simple" style="font-size: 16px;"></i> 后台管理
+                </a>
                 <a href="说明文件/index.html" target="_blank"
-                    style="color: #ffffff; text-decoration: none; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 14px; background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 6px; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.2);">
-                    <i class="ph ph-book-open" style="font-size: 16px;"></i> 新版说明文档
+                    style="text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-book-open" style="font-size: 16px;"></i> 说明文档
                 </a>
             </div>
         </div>
@@ -110,7 +115,14 @@
                         </button>
                     </div>
 
-                    <div style="display: flex; gap: 12px; align-items: center;">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn btn-ghost" id="undoBtn" onclick="undo()" disabled title="撤销 (Ctrl+Z)">
+                            <i class="ph ph-arrow-counter-clockwise"></i> 撤销
+                        </button>
+                        <button class="btn btn-ghost" id="redoBtn" onclick="redo()" disabled title="重做 (Ctrl+Y)">
+                            <i class="ph ph-arrow-clockwise"></i> 重做
+                        </button>
+                        <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 4px;"></div>
                         <button class="btn btn-danger" onclick="clearAllData()">
                             <i class="ph ph-trash" style="font-size: 16px;"></i> 清空
                         </button>

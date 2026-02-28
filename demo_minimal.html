@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极简数据/企业仪表盘 风格 Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-main: #ffffff;
+            --border-light: #f0f0f0;
+            --border-dark: #d9d9d9;
+            --text-title: #262626;
+            --text-body: #595959;
+            --primary: #1890ff;
+            --primary-hover: #40a9ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-main);
+            color: var(--text-body);
+            padding: 40px;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 纯文字标题，没有任何装饰 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--text-title);
+            padding-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: var(--text-title);
+            font-weight: 700;
+        }
+
+        /* 无边框表单，仅用下划线 */
+        .controls {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .field label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8c8c8c;
+        }
+
+        select,
+        input {
+            border: none;
+            border-bottom: 1px solid var(--border-dark);
+            padding: 4px 0;
+            font-size: 15px;
+            color: var(--text-title);
+            background: transparent;
+            outline: none;
+            border-radius: 0;
+        }
+
+        select:focus,
+        input:focus {
+            border-bottom-color: var(--primary);
+        }
+
+        /* 细线格表格 (类 Excel) 但更现代 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        th {
+            font-weight: 500;
+            color: var(--text-title);
+            background: #fafafa;
+            border-top: 1px solid var(--border-light);
+        }
+
+        tr:hover td {
+            background: #f0f8ff;
+            /* 极其微弱的蓝色悬浮 */
+        }
+
+        /* 数据对齐 */
+        .num-cell {
+            text-align: right;
+            font-family: monospace;
+            font-size: 15px;
+        }
+
+        .actions {
+            margin-top: 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+        }
+
+        /* 方正硬朗的按钮 */
+        .btn {
+            padding: 8px 24px;
+            border: 1px solid var(--border-dark);
+            background: #fff;
+            color: var(--text-title);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-primary {
+            background: var(--text-title);
+            color: #fff;
+            border-color: var(--text-title);
+        }
+
+        .btn-primary:hover {
+            background: #434343;
+            border-color: #434343;
+            color: #fff;
+        }
+
+        .sub-text {
+            color: #bfbfbf;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>洁净室报价单</h1>
+            <div style="font-family: monospace; font-size: 14px;">NO. 20260228-001</div>
+        </div>
+
+        <div class="controls">
+            <div class="field">
+                <label>行业</label>
+                <select>
+                    <option>制药工程 (GMP)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>标准</label>
+                <select>
+                    <option>GB 50591-2010</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>系统折扣</label>
+                <input type="number" value="1.0" step="0.1" style="width: 60px;">
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%">#</th>
+                    <th style="width: 15%">区划名称</th>
+                    <th style="width: 15%">级别</th>
+                    <th style="width: 10%" class="num-cell">面积(m²)</th>
+                    <th style="width: 40%">检测细项</th>
+                    <th style="width: 15%" class="num-cell">金额(¥)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>01</td>
+                    <td><b>无菌走廊</b></td>
+                    <td>百级</td>
+                    <td class="num-cell">25</td>
+                    <td>
+                        粒子(3点), 沉降菌(3点), 风速(3点)
+                    </td>
+                    <td class="num-cell">1,200.00</td>
+                </tr>
+                <tr>
+                    <td>02</td>
+                    <td><b>缓冲间 1</b></td>
+                    <td>万级</td>
+                    <td class="num-cell">15</td>
+                    <td>
+                        压差(1门), 换气(1风口)
+                    </td>
+                    <td class="num-cell">400.00</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5" style="text-align: right; padding-top: 24px; font-weight: 500;">总计:</td>
+                    <td class="num-cell" style="padding-top: 24px; font-weight: 700; font-size: 18px;">¥ 1,600.00</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="actions">
+            <button class="btn">+ 增加行</button>
+            <button class="btn btn-primary">导出 Excel</button>
+        </div>
+    </div>
+
+</body>
+
+</html>

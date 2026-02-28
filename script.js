@@ -466,61 +466,18 @@ function toggleAllRoomsCollapse() {
     });
 }
 
-let lastDeletedRoomData = null;
-
 function removeRoom(rowId) {
     const tr = document.getElementById(rowId);
     if (!tr) return;
 
-    // 删除前，保存房间的数据用于撤销机制
-    const roomName = tr.querySelector('.room-name').value;
-    const roomLevel = tr.querySelector('.room-level').value;
-    const area = tr.querySelector('.room-area').value;
-
-    let checks = {}; let manuals = {};
-    tr.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        const cls = Array.from(cb.classList).find(c => c.startsWith('chk-'));
-        if (cls) checks[cls.replace('chk-', '')] = cb.checked;
-    });
-    tr.querySelectorAll('.pt-input').forEach(input => {
-        if (input.dataset.locked === "true") {
-            const cls = Array.from(input.classList).find(c => c.startsWith('in-'));
-            if (cls) manuals[cls.replace('in-', '')] = input.value;
-        }
-    });
-
-    lastDeletedRoomData = { roomName, roomLevel, area, checks, manuals };
+    // 删除前压入撤销栈
+    pushUndoState();
 
     tr.remove();
     calculateAll();
-
-    showUndoToast(`已删除房间【${roomName}】`, undoDeleteRoom);
 }
 
-function undoDeleteRoom() {
-    if (!lastDeletedRoomData) return;
-    const r = lastDeletedRoomData;
-    addRoom(r.roomName, r.roomLevel, r.area);
-    const tr = document.getElementById(`room_row_${roomCount}`);
-
-    if (r.checks) {
-        for (let k in r.checks) {
-            const cb = tr.querySelector(`.chk-${k}`);
-            if (cb) cb.checked = r.checks[k];
-        }
-    }
-    if (r.manuals) {
-        for (let k in r.manuals) {
-            const input = tr.querySelector(`.in-${k}`);
-            if (input) {
-                input.value = r.manuals[k];
-                handleManualEdit(input);
-            }
-        }
-    }
-    lastDeletedRoomData = null;
-    calculateAll();
-}
+// undoDeleteRoom 已被通用撤销/重做系统替代
 
 function mapCustomerLevelToSystem(rawLevel) {
     if (!rawLevel) return combinedLevels[0];
@@ -961,16 +918,10 @@ function exportToExcel() {
     XLSX.writeFile(wb, `洁净室检测明细单_${industry}.xlsx`);
 }
 
-// --- 新增：一键清空表单功能 ---
-let lastClearedDraft = null;
-
+// --- 一键清空（带撤销栈保护） ---
 function clearAllData() {
-    if (!confirm("确定要清空所有已填写的房间和配置，重新开始吗？")) {
-        return;
-    }
-
-    // 存入彻底清空前的状态
-    lastClearedDraft = localStorage.getItem('cleanroom_draft_v1');
+    // 清空前压入撤销栈
+    pushUndoState();
 
     document.getElementById('industrySelect').selectedIndex = 0;
     document.getElementById('standardSelect').selectedIndex = 0;
@@ -986,16 +937,6 @@ function clearAllData() {
 
     addRoom();
     handleStandardChange();
-
-    showUndoToast("已一键清空所有数据！", undoClearAll);
-}
-
-function undoClearAll() {
-    if (!lastClearedDraft) return;
-    localStorage.setItem('cleanroom_draft_v1', lastClearedDraft);
-    restoreDraft();
-    lastClearedDraft = null;
-    calculateAll();
 }
 
 // === 草稿箱核心逻辑与 Toast 提醒 ===
@@ -1074,28 +1015,121 @@ function restoreDraft() {
     return false;
 }
 
-function showUndoToast(msg, callback) {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
+// ================================================================
+// 撤销/重做历史栈系统
+// ================================================================
+const UNDO_MAX = 30;
+let undoStack = [];
+let redoStack = [];
 
-    const toast = document.createElement('div');
-    toast.className = 'toast-msg';
-    toast.innerHTML = `<span>${msg}</span> <button>撤销</button>`;
-
-    const btn = toast.querySelector('button');
-    let isClicked = false;
-    btn.onclick = () => {
-        isClicked = true;
-        callback();
-        toast.remove();
+// 捕获当前完整页面状态快照
+function captureSnapshot() {
+    const snapshot = {
+        industry: document.getElementById('industrySelect').value,
+        standard: document.getElementById('standardSelect').value,
+        discount: document.getElementById('discountFactor').value,
+        rooms: []
     };
-
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        if (!isClicked && document.body.contains(toast)) {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 300);
-        }
-    }, 6000);
+    document.querySelectorAll('.room-group').forEach(tr => {
+        const roomName = tr.querySelector('.room-name').value;
+        const roomLevel = tr.querySelector('.room-level').value;
+        const area = tr.querySelector('.room-area').value;
+        let checks = {};
+        let manuals = {};
+        tr.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const cls = Array.from(cb.classList).find(c => c.startsWith('chk-'));
+            if (cls) checks[cls.replace('chk-', '')] = cb.checked;
+        });
+        tr.querySelectorAll('.pt-input').forEach(input => {
+            if (input.dataset.locked === "true") {
+                const cls = Array.from(input.classList).find(c => c.startsWith('in-'));
+                if (cls) manuals[cls.replace('in-', '')] = input.value;
+            }
+        });
+        snapshot.rooms.push({ roomName, roomLevel, area, checks, manuals });
+    });
+    return JSON.stringify(snapshot);
 }
+
+// 从快照恢复页面状态（不触发 pushUndoState）
+function restoreSnapshot(snapshotStr) {
+    try {
+        const data = JSON.parse(snapshotStr);
+        document.getElementById('industrySelect').value = data.industry || '食品';
+        document.getElementById('standardSelect').value = data.standard || 'ISO';
+        document.getElementById('discountFactor').value = data.discount || 1.0;
+
+        document.getElementById('roomBody').innerHTML = '';
+        roomCount = 0;
+
+        if (data.rooms && data.rooms.length > 0) {
+            data.rooms.forEach(r => {
+                addRoom(r.roomName, r.roomLevel, r.area);
+                const tr = document.getElementById(`room_row_${roomCount}`);
+                if (r.checks) {
+                    for (let k in r.checks) {
+                        const cb = tr.querySelector(`.chk-${k}`);
+                        if (cb) cb.checked = r.checks[k];
+                    }
+                }
+                if (r.manuals) {
+                    for (let k in r.manuals) {
+                        const input = tr.querySelector(`.in-${k}`);
+                        if (input) {
+                            input.value = r.manuals[k];
+                            handleManualEdit(input);
+                        }
+                    }
+                }
+            });
+        } else {
+            addRoom();
+        }
+        calculateAll();
+    } catch (e) {
+        console.error('撤销/重做恢复失败', e);
+    }
+}
+
+// 在破坏性操作前调用：保存当前状态到撤销栈
+function pushUndoState() {
+    undoStack.push(captureSnapshot());
+    if (undoStack.length > UNDO_MAX) undoStack.shift();
+    redoStack = []; // 新操作清空重做栈
+    updateUndoRedoButtons();
+}
+
+function undo() {
+    if (undoStack.length === 0) return;
+    redoStack.push(captureSnapshot());
+    const prev = undoStack.pop();
+    restoreSnapshot(prev);
+    updateUndoRedoButtons();
+}
+
+function redo() {
+    if (redoStack.length === 0) return;
+    undoStack.push(captureSnapshot());
+    const next = redoStack.pop();
+    restoreSnapshot(next);
+    updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
+    if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+    if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+}
+
+// 键盘快捷键支持 Ctrl+Z / Ctrl+Y
+document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+    }
+});

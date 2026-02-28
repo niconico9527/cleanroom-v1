@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS 风格 Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-body: #f7f9fa;
+            --bg-card: #ffffff;
+            --bg-hover: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --danger: #ef4444;
+            --success: #10b981;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius-lg: 12px;
+            --radius-md: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 40px 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 头部没有大色块，只有简洁的文字和分割线 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        /* 工具栏，没有外边框，只是一排控件 */
+        .toolbar {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 32px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        select,
+        input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-card);
+            font-size: 14px;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        select:focus,
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* 统一使用幽灵按钮为主，只有一个彩色主按钮 */
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* 表格容器，圆角、微妙阴影，无内部竖线 */
+        .table-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: #f8fafc;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* 去掉所有单元格竖线，靠对齐区分列 */
+        td {
+            font-size: 14px;
+            color: var(--text-main);
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .config-box {
+            background: var(--bg-body);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        .price {
+            font-weight: 600;
+            font-family: monospace;
+            font-size: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>洁净室报价台</h1>
+            <div style="color: var(--text-muted); font-size: 14px;">自动核算系统 v2.0</div>
+        </div>
+
+        <!-- 去边框的工具栏 -->
+        <div class="toolbar">
+            <div class="control-group">
+                <label>行业类型</label>
+                <select>
+                    <option>食品行业</option>
+                    <option>电子行业</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>执行标准</label>
+                <select>
+                    <option>ISO 14644-1 (国际标准)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>报价折扣</label>
+                <input type="number" value="1.0" step="0.1" style="width: 80px;">
+            </div>
+
+            <div style="flex:1"></div>
+
+            <div
+                style="display: flex; align-items: center; gap: 8px; color: var(--success); font-size: 13px; font-weight: 500; background: #ecfdf5; padding: 6px 12px; border-radius: var(--radius-md);">
+                <i class="ph-fill ph-check-circle"></i> 云端数据已同步
+            </div>
+        </div>
+
+        <!-- 操作栏只强调一个主要操作 -->
+        <div class="actions">
+            <button class="btn btn-ghost"><i class="ph ph-trash"></i> 清空数据</button>
+            <button class="btn btn-secondary"><i class="ph ph-plus"></i> 添加房间</button>
+            <button class="btn btn-primary"><i class="ph ph-download-simple"></i> 导出报价单</button>
+        </div>
+
+        <!-- 干净通透的表格 -->
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%">房间名称</th>
+                        <th style="width: 15%">洁净度等级</th>
+                        <th style="width: 10%">面积 (m²)</th>
+                        <th style="width: 45%">检测项目配置</th>
+                        <th style="width: 15%; text-align: right;">小计</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" value="灌装车间"
+                                style="width: 100%; border:none; background:transparent; font-weight: 500;"></td>
+                        <td><span class="tag">万级 (ISO 7)</span></td>
+                        <td><input type="number" value="120"
+                                style="width: 60px; border:none; background:transparent; border-bottom:1px solid #e2e8f0; border-radius:0;">
+                        </td>
+                        <td>
+                            <div class="config-box">
+                                <span style="color:#64748b;">常规项：</span> 悬浮粒子(4点) · 沉降菌(4点) · 换气次数(送风口4个)
+                            </div>
+                        </td>
+                        <td class="price" style="text-align: right;">¥ 1,250.00</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="更衣室"
+                                style="width: 100%; border:none; background:transparent; font-weight: 500;"></td>
+                        <td><span class="tag">十万级 (ISO 8)</span></td>
+                        <td><input type="number" value="45"
+                                style="width: 60px; border:none; background:transparent; border-bottom:1px solid #e2e8f0; border-radius:0;">
+                        </td>
+                        <td>
+                            <div class="config-box">
+                                <span style="color:#64748b;">常规项：</span> 悬浮粒子(2点) · 静压差(1个门)
+                            </div>
+                        </td>
+                        <td class="price" style="text-align: right;">¥ 450.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+
+</html>

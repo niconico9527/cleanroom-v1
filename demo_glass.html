@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>毛玻璃/Apple 风格 Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+
+            --text-main: #1d1d1f;
+            --text-muted: #86868b;
+            --primary: #0071e3;
+            --primary-hover: #0077ed;
+
+            --radius-xl: 20px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 40px 24px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.003em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        /* 玻璃拟物化卡片 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--glass-shadow);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-group label {
+            padding: 0 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        select,
+        input {
+            border: none;
+            background: #ffffff;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            color: var(--text-main);
+            outline: none;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 999px;
+            /* 全圆角按钮 */
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 14px rgba(0, 113, 227, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 113, 227, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text-main);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-secondary:hover {
+            background: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .room-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .pill {
+            background: rgba(0, 113, 227, 0.1);
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* 弱化的配置模块 */
+        .config-detail {
+            font-size: 13px;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.4);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>净室报价系统</h1>
+
+        <div class="glass-panel">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div class="toolbar">
+                    <div class="input-group">
+                        <label>标准</label>
+                        <select>
+                            <option>ISO 14644-1</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>折扣</label>
+                        <input type="number" value="1.0" step="0.1" style="width: 70px;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-secondary"><i class="ph ph-plus"></i> 添加房间</button>
+                    <button class="btn btn-primary"><i class="ph-fill ph-check-circle"></i> 生成报价单</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 10px 24px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 20%">房间信息</th>
+                        <th style="width: 15%">等级</th>
+                        <th style="width: 50%">检测内容</th>
+                        <th style="width: 15%; text-align: right;">价格</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="room-title">PCR 实验室</div>
+                            <div style="font-size: 13px; color: var(--text-muted); margin-top:4px;">面积: 40 m²</div>
+                        </td>
+                        <td><span class="pill">万级 (ISO 7)</span></td>
+                        <td>
+                            <div class="config-detail">
+                                悬浮粒子(2点), 沉降菌(2点), 压差(2门), 换气(3个送风口)
+                            </div>
+                        </td>
+                        <td style="text-align: right; font-weight: 600; font-size: 16px;">¥ 850.00</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="room-title">无菌制剂室</div>
+                            <div style="font-size: 13px; color: var(--text-muted); margin-top:4px;">面积: 150 m²</div>
+                        </td>
+                        <td><span class="pill">百级 (ISO 5)</span></td>
+                        <td>
+                            <div class="config-detail">
+                                悬浮粒子(6点), 浮游菌(6点), 风速(6点)
+                            </div>
+                        </td>
+                        <td style="text-align: right; font-weight: 600; font-size: 16px;">¥ 2,100.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+
+</html>
