@@ -245,10 +245,46 @@ h2 i {
     border-color: var(--danger) !important;
     color: var(--danger-hover) !important;
     background-color: var(--danger-50) !important;
+    border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
 }
 
 .top-toolbar .discount-input:focus {
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.discount-wrapper {
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.discount-spinner {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--danger);
+    border-left: none;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    overflow: hidden;
+    background: var(--danger-50);
+}
+
+.spinner-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--danger-hover);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0;
+    transition: background 0.15s;
+    line-height: 1;
+}
+
+.spinner-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
 }
 
 .toolbar-spacer {
@@ -633,10 +669,10 @@ table {
 
 th,
 td {
-    border-bottom: 1px solid var(--border-color);
-    border-right: none;
+    border-bottom: 1px solid #d0d5dd;
+    border-right: 1px solid #e5e7eb;
     padding: 14px 16px;
-    text-align: left;
+    text-align: center;
     vertical-align: middle;
 }
 
@@ -649,7 +685,7 @@ td:last-child {
     border-bottom: none;
 }
 
-/* SaaS 表头 — 浅 Indigo 底 + uppercase */
+/* SaaS 表头 — 浅 Indigo 底 */
 th {
     background-color: var(--primary-50);
     color: var(--text-secondary);
@@ -659,8 +695,38 @@ th {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 2px solid var(--primary-light);
+    border-bottom: 2px solid var(--primary);
+    border-right: 1px solid var(--primary-light);
+    text-align: center;
+}
+
+th:last-child {
     border-right: none;
+}
+
+/* 表头内联图标按钮 */
+.th-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-faint);
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 6px;
+    vertical-align: middle;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+.th-icon-btn:hover {
+    background: var(--bg-hover);
+    color: var(--primary);
+    border-color: var(--primary-light);
 }
 
 /* 表格悬浮高亮 */

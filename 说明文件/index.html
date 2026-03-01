@@ -292,18 +292,15 @@
 
         <div class="doc-content" id="scroll-area">
 
-            <!-- ===================== 系统总览.md ===================== -->
+            <!-- ===================== 系统概述 ===================== -->
             <div class="doc-section">
-                <h1 id="sys-title">洁净室检测报价系统 — 系统说明</h1>
-
-                <h2 id="sys-what">这个系统是做什么的</h2>
-                <p>这是一个给<strong>第三方洁净室检测公司</strong>用的报价工具。</p>
-                <p>检测公司接到客户委托后，需要根据客户车间的房间数量、面积、洁净等级，按照国标或国际标准算出每个房间需要测多少个检测点，再按公司内部的单价算出报价。以前靠翻标准书+手动计算+填Excel，费时易错。这个工具把这个过程自动化了。
-                </p>
-                <caption-box><strong>一句话总结：输入房间面积和洁净等级，自动算出检测点数和报价。</strong></caption-box>
+                <h1 id="sys-title">系统概述</h1>
+                <p>这是一个给<strong>第三方洁净室检测公司</strong>用的自动报价工具。检测公司接到客户委托后，需要根据客户车间的房间数量、面积、洁净等级，按照国标或国际标准算出每个房间需要测多少个检测点，再乘以公司内部单价得出报价。以前靠翻标准书
+                    + 手动计算 + 填 Excel，费时费力还容易出错。这个工具把整个流程自动化了。</p>
+                <caption-box><strong>一句话总结：输入房间面积和洁净等级 → 自动算出检测点数 → 自动生成报价单。</strong></caption-box>
 
                 <h2 id="sys-components">系统组成</h2>
-                <p>系统分两个独立页面，没有后端服务器：</p>
+                <p>系统分为两个独立页面，纯前端运行，无需后端服务器：</p>
                 <table class="doc-table">
                     <thead>
                         <tr>
@@ -316,231 +313,336 @@
                     <tbody>
                         <tr>
                             <td>管理端</td>
-                            <td><code>admin.html</code> + <code>admin.js</code></td>
+                            <td><code>admin.html</code></td>
                             <td>负责定价的管理员</td>
-                            <td>设置各检测项目的单价</td>
+                            <td>设置各检测项目在不同等级下的单价</td>
                         </tr>
                         <tr>
                             <td>客户端</td>
-                            <td><code>index.html</code> + <code>script.js</code></td>
-                            <td>业务员/销售</td>
+                            <td><code>index.html</code></td>
+                            <td>业务员 / 销售</td>
                             <td>配置房间信息、自动计算报价、导出报价单</td>
                         </tr>
                     </tbody>
                 </table>
-                <p>两端共用同一套样式文件 <code>style.css</code>。</p>
 
-                <h2 id="sys-dataflow">数据是怎么流转的</h2>
-                <pre><code>管理员设置单价 → 发布到 Gitee 云端仓库
-                          ↓
-            业务员端启动时自动拉取（每5分钟轮询一次）
-                          ↓
-              存到浏览器 localStorage，用于计算报价
-</code></pre>
-                <p>如果没有网络，管理员可以把单价导出成 <code>.crm</code> 文件，线下发给业务员手动导入。</p>
-                <caption-box><strong>技术细节：</strong>所谓"加密"实际上只是 Base64 编码（中文先做了 <code>encodeURIComponent</code>
-                    处理），不是真正的加密算法。目的是防止非技术人员直接打开文件看到明文价格。</caption-box>
+                <h2 id="sys-dataflow">数据怎么流转</h2>
+                <p>管理员在管理端设好单价后，点「发布至云端」推送到 Gitee 仓库。客户端每 5 分钟自动拉取一次最新单价，存到浏览器本地用于计算。</p>
+                <p>如果没有网络，管理员也可以把配置导出成 <code>.crm</code> 文件，线下发给业务员手动导入，完全支持离线使用。</p>
 
-                <h2 id="sys-items">支持的检测项目</h2>
-                <p>系统内置了 14 个检测项目，分为两类：</p>
-                <p><strong>常规项目</strong>（默认勾选）：悬浮粒子、静压差、换气次数/风速/风量、温湿度、噪声、照度、浮游菌、沉降菌</p>
-                <p><strong>特殊项目</strong>（默认不勾选）：振动、自净时间、气流流型、高效检漏、紫外灯辐射强度、表面微生物</p>
+                <h2 id="sys-items">检测项目清单</h2>
+                <p>系统内置 14 项洁净室环境检测指标，分两组：</p>
+                <p><strong>常规项目</strong>（默认勾选，共 8 项）：悬浮粒子、静压差、换气次数、温湿度、噪声、照度、浮游菌、沉降菌</p>
+                <p><strong>特殊项目</strong>（默认不勾选，共 6 项）：振动、自净时间、气流流型、高效检漏、紫外灯辐射强度、表面微生物</p>
 
                 <h2 id="sys-levels">支持的洁净等级</h2>
-                <p>系统支持四套等级体系共 18 个等级：</p>
-                <ul>
-                    <li><strong>ISO 国际标准</strong>：5级、6级、7级、8级、9级</li>
-                    <li><strong>国标数值</strong>：100级、1000级、10000级、100000级、300000级</li>
-                    <li><strong>GMP 医药</strong>：A级、B级、C级、D级</li>
-                    <li><strong>医院手术室</strong>：I级、II级、III级、IV级</li>
-                </ul>
+                <p>系统支持四套等级体系，共 18 个等级：</p>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>体系</th>
+                            <th>等级</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ISO 国际标准</td>
+                            <td>5级、6级、7级、8级、9级</td>
+                        </tr>
+                        <tr>
+                            <td>国标数值</td>
+                            <td>100级、1000级、10000级、100000级、300000级</td>
+                        </tr>
+                        <tr>
+                            <td>GMP 医药</td>
+                            <td>A级、B级、C级、D级</td>
+                        </tr>
+                        <tr>
+                            <td>医院手术室</td>
+                            <td>I级、II级、III级、IV级</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <h2 id="sys-standards">支持的点数计算标准</h2>
-                <p>不同标准下，同样面积的房间算出来的检测点数不同：</p>
+                <h2 id="sys-standards">五种点数计算标准</h2>
+                <p>选择不同的执行标准，同样面积的房间算出来的检测点数会不同：</p>
                 <table class="doc-table">
                     <thead>
                         <tr>
                             <th>标准</th>
-                            <th>说明</th>
-                            <th>点数计算方式（以悬浮粒子为例）</th>
+                            <th>适用场景</th>
+                            <th>悬浮粒子点数算法</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td>ISO 14644-1</td>
-                            <td>国际标准</td>
-                            <td>按 ISO 规定的面积-点数对照表查表</td>
+                            <td>国际通用</td>
+                            <td>按 ISO 标准面积-点数对照表查表</td>
                         </tr>
                         <tr>
                             <td>GB 50591</td>
-                            <td>洁净室施工及验收规范</td>
-                            <td><code>√面积</code> 向上取整</td>
+                            <td>施工验收</td>
+                            <td>√面积 向上取整（可切换为附录查表法）</td>
                         </tr>
                         <tr>
-                            <td>常规电子/工业(GB)</td>
-                            <td>工业场景，不测微生物</td>
-                            <td><code>√面积</code> 向上取整，自动隐藏浮游菌/沉降菌</td>
+                            <td>常规电子/工业</td>
+                            <td>工业场景</td>
+                            <td>√面积 向上取整，自动隐藏微生物类项目</td>
                         </tr>
                         <tr>
                             <td>GB16292 旧版</td>
                             <td>兼容老旧药厂</td>
-                            <td>按面积区间和级别查固定对照表，且只允许选 100/10000/100000/300000 四个级别</td>
+                            <td>按面积区间 + 级别查固定对照表</td>
+                        </tr>
+                        <tr>
+                            <td>GB 50333</td>
+                            <td>医院洁净手术部</td>
+                            <td>I~III 级固定点位，IV 级用√面积</td>
                         </tr>
                     </tbody>
                 </table>
 
                 <h2 id="sys-pricing">阶梯计价规则</h2>
-                <p>管理员为每个检测项目配置三个参数：</p>
-                <ul>
-                    <li><strong>阈值点数</strong>（比如 10）</li>
-                    <li><strong>阈值内单价</strong>（点数总量 ≤ 阈值时，每点的价格）</li>
-                    <li><strong>超阈值单价</strong>（点数总量 > 阈值时，每点的价格）</li>
-                </ul>
-                <p>注意：阈值判断是按<strong>同一洁净等级下所有房间该项目的点数总和</strong>来判断的，不是按单个房间。比如三个万级房间的悬浮粒子点数分别是 4、3、5，总和 12 > 阈值
-                    10，则这三个房间的悬浮粒子都按超阈值单价计算。</p>
+                <p>管理员为每个检测项目设置三个参数：<strong>阈值点数</strong>（比如 10）、<strong>阈值内单价</strong>、<strong>超阈值单价</strong>。</p>
+                <p>当整张报价单里，<strong>同一洁净等级下所有房间</strong>某项目的点数总和超过阈值时，该项目全部改按超阈值单价计算。举例：三个万级房间的悬浮粒子点数分别是 4、3、5，总和 12 超过阈值
+                    10，则这三个房间的悬浮粒子都按超阈值（更优惠的）单价计算。</p>
             </div>
 
-            <!-- ===================== 客户端手册.md ===================== -->
+            <!-- ===================== 客户端操作指南 ===================== -->
             <div class="doc-section">
-                <h1 id="client-title">客户端操作手册</h1>
-                <p><strong>访问地址</strong>：<code>index.html</code>（或在线地址 https://cleanroom1.netlify.app/）</p>
-                <p>客户端是业务员日常用的报价工具。输入客户的房间信息后自动生成检测点数和报价。</p>
+                <h1 id="client-title">客户端操作指南</h1>
+                <p>客户端是业务员日常用的报价工具。打开 <code>index.html</code> 即可使用，输入客户的房间信息后自动生成检测点数和报价。</p>
 
-                <h2 id="client-1">1. 顶部设置区</h2>
+                <h2 id="client-1">全局参数设置</h2>
+                <p>页面顶部有三个核心设置项：</p>
                 <ul>
-                    <li><strong>行业类型</strong>：选择客户所属行业（食品、药品、医院等）。影响导出报价单上的显示，不影响计算。</li>
-                    <li><strong>点数执行标准</strong>：选择计算检测点数的依据。不同标准的计算公式不同，选错了点数会差很多。选择"常规电子/工业(GB)"后，微生物类项目（浮游菌、沉降菌）会自动隐藏。
-                    </li>
-                    <li><strong>报价折扣</strong>：填 <code>1.0</code> 是原价，<code>0.8</code> 是八折。修改后所有房间的报价立即重算。</li>
-                    <li><strong>一键清空</strong>：清除所有已填数据，恢复初始状态。清空后会弹出"撤销"按钮，可以反悔。</li>
+                    <li><strong>行业类型</strong>：选择客户所属行业（食品、药品、医院等）。仅影响导出报价单上的显示，不影响计算。</li>
+                    <li><strong>点数执行标准</strong>：决定用哪套公式计算检测点数。选错了点数会差很多，务必确认。</li>
+                    <li><strong>报价折扣</strong>：填 <code>1.0</code> 是原价，<code>0.8</code> 是八折。改了之后所有房间报价立即重算。</li>
                 </ul>
+                <h3 id="client-1-test">测试用例：全局参数</h3>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>操作</th>
+                            <th>预期结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>切换行业类型为「药品」</td>
+                            <td>下拉框显示「药品」，报价数字不变</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>切换标准为「GB16292旧版」</td>
+                            <td>等级下拉框只剩 100级/10000级/100000级/300000级</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>将折扣改为 <code>0.5</code></td>
+                            <td>所有房间报价变为原来的一半</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <h2 id="client-2">2. 检测依据和评价依据</h2>
-                <p>可多选。这些选项不影响计算，只影响导出的 Excel 报价单上打印哪些标准名称。末尾有"自定义录入"选项，可以手动填写列表里没有的标准。</p>
+                <h2 id="client-2">检测依据与评价依据</h2>
+                <p>两个多选框区域，用于选择导出报价单时打印的标准名称。<strong>不影响计算结果</strong>，只影响 Excel 上的打印内容。末尾有「自定义录入」选项，可手动输入列表里没有的标准。</p>
+                <h3 id="client-2-test">测试用例：依据选择</h3>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>操作</th>
+                            <th>预期结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>在检测依据区域滚动到底部</td>
+                            <td>能看到 6 条新增标准（GB 50687、GB 15979、GB 29923、DB32/T 972、DB32/T 2730、药典2025年版）</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>勾选 3 条依据后导出报价单</td>
+                            <td>Excel「检测依据」列显示所勾选的 3 条名称</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <h2 id="client-3">3. 数据源状态</h2>
-                <p>显示当前使用的单价数据来自哪里：</p>
+                <h2 id="client-3">数据源状态</h2>
+                <p>状态栏显示当前单价数据来源：🟢 绿色 = 已同步云端；🟠 橙色 = 使用上次缓存；⚠️ 红色 = 无数据，需联网或导入。</p>
+                <p>系统每 5 分钟自动轮询云端。发现更新会弹出通知，也可手动点「同步云端最新数据」。</p>
+
+                <h2 id="client-4">房间配置（核心功能）</h2>
+                <p>每个房间需要填写：<strong>房间名称</strong>、<strong>洁净等级</strong>、<strong>面积(m²)</strong>。</p>
                 <ul>
-                    <li>🟢 <strong>绿色</strong>：已连接云端，显示数据版本时间。</li>
-                    <li>🟠 <strong>橙色</strong>：离线状态，使用的是上次缓存的数据。</li>
-                    <li>⚠️ <strong>红色</strong>：没有任何价格数据，需要联网同步或手动导入 <code>.crm</code> 文件。</li>
+                    <li>在面积框输完数字后按<strong>回车键</strong>，自动新增下一行并定位光标，方便连续录入</li>
+                    <li>等级列表头的「向下填充」可以把第一行等级快速应用到所有行</li>
                 </ul>
-                <p>系统每 5 分钟自动轮询一次云端。如果检测到有更新，会弹出通知，可以选择"立即同步"或"忽略"。也可以手动点"同步云端最新数据"按钮。</p>
+                <p><strong>自动 vs 手动模式</strong>：灰色输入框 = 系统自动计算的值，改面积会跟着变；蓝色输入框 = 你手动改过的值，不会被覆盖。想解锁手动值，把框里数字删空即可。</p>
+                <h3 id="client-4-test">测试用例：房间配置</h3>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>操作</th>
+                            <th>预期结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>点击「添加房间」</td>
+                            <td>表格新增一行，默认面积 50</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>面积框输入 <code>100</code> 后按回车</td>
+                            <td>自动新增下一行，光标跳到新行名称框</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>手动将悬浮粒子点数改为 <code>20</code></td>
+                            <td>输入框变蓝色（手动锁定），改面积不影响此值</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>将蓝色框内容删空</td>
+                            <td>输入框恢复灰色，系统重新自动计算</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>点击等级列「向下填充」</td>
+                            <td>所有房间等级变为第一行的等级</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <h2 id="client-4">4. 房间配置（核心功能）</h2>
+                <h2 id="client-5">批量导入 Excel</h2>
+                <p>点击「智能表格导入」选择文件，系统在前 30 行内自动查找「房间名称」表头，然后识别等级列和面积列。等级识别很宽松：客户填「万级」「1万」「10000」都能识别为「10000级」。</p>
+                <h3 id="client-5-test">测试用例：批量导入</h3>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>操作</th>
+                            <th>预期结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>点击「下载标准模板」</td>
+                            <td>下载 <code>.xlsx</code> 模板文件</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>模板中填 3 个房间后导入</td>
+                            <td>提示「成功导入了 3 个房间」</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>导入等级列写着「万级」的表格</td>
+                            <td>系统识别为「10000级」</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <h3 id="client-4-1">添加房间</h3>
-                <ul>
-                    <li>点击"添加房间"按钮新增一行。</li>
-                    <li>在面积输入框里输完数字后按<strong>回车键</strong>，会自动新增下一行并把光标定位到新行的房间名称框，方便连续录入。</li>
-                </ul>
+                <h2 id="client-6">报价汇总与导出</h2>
+                <p>底部「系统汇总总计」实时显示所有房间报价之和（已乘折扣），金额变化时有数字滚动动画。点击「导出报价」生成格式规范的 Excel 文件。</p>
 
-                <h3 id="client-4-2">每个房间需要填写</h3>
-                <ul>
-                    <li><strong>房间名称</strong>：自定义，如"灌装间"。</li>
-                    <li><strong>洁净等级</strong>：从下拉框选择。等级列表头有"向下填充"按钮，可以把第一个房间的等级快速应用到所有房间。</li>
-                    <li><strong>面积(m²)</strong>：输入面积后，系统根据当前选择的执行标准自动计算各项目的检测点数。</li>
-                </ul>
-
-                <h3 id="client-4-3">检测项目与点数</h3>
-                <p>每个房间下方展开后可以看到 14 个检测项目，分常规和特殊两组。</p>
-                <ul>
-                    <li><strong>勾选框</strong>：控制该项目是否参与计算。常规项目默认勾选，特殊项目默认不勾选。</li>
-                    <li><strong>点数输入框</strong>：
-                        <ul>
-                            <li><strong>灰色框（自动模式）</strong>：系统自动根据面积和标准计算，修改面积或标准后会自动更新。</li>
-                            <li><strong>蓝色框（手动锁定模式）</strong>：如果你手动改了某个点数，框变蓝，后续面积/标准变化不会影响这个值。把框里的数字删空，就解除锁定，恢复自动计算。
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-
-                <h3 id="client-4-4">折叠/展开</h3>
-                <p>点击表头的"展开/折叠所有明细"可以收起检测项目的详细配置。折叠后每个房间只显示一行摘要（已选项目及其点数）。</p>
-
-                <h3 id="client-4-5">删除房间</h3>
-                <p>点击对应行的"删除"按钮。删除后会弹出"撤销"提示，可以恢复。</p>
-
-                <h2 id="client-5">5. Excel 导入</h2>
-                <p>如果客户提供了房间清单的 Excel 文件，可以直接导入，不用手动逐个添加。</p>
-                <ul>
-                    <li>点击"智能表格导入"选择文件。</li>
-                    <li>系统会在 Excel 前 30 行内查找包含"房间名称"字样的表头行，然后识别"级别/等级"列和"面积"列。</li>
-                    <li>级别识别比较宽松：客户填"万级"、"1万"、"10000"、"10000级"都能识别为"10000级"。</li>
-                    <li>如果页面上只有一个默认的空房间，导入时会自动替换掉。</li>
-                    <li>也可以点击"下载标准模板"获取一份模板文件参考格式。</li>
-                </ul>
-
-                <h2 id="client-6">6. 报价汇总与导出</h2>
-                <ul>
-                    <li>页面底部"系统汇总总计"显示所有房间报价之和（已乘以折扣系数），金额变化时有数字滚动动画。</li>
-                    <li>点击"一键导出报价单"生成 Excel 文件，包含：行业、房间名、等级、面积、检测项目明细、点数、检测依据、评价依据、房间小计。同一房间的多个项目会通过合并单元格归在一起。</li>
-                </ul>
-
-                <h2 id="client-7">7. 草稿自动保存</h2>
-                <p>每次计算完成后，系统自动将当前所有数据（行业、标准、折扣、所有房间信息、勾选状态、手动锁定的点数）保存到浏览器本地。下次打开页面时自动恢复，不用担心关页面丢数据。</p>
+                <h2 id="client-7">草稿自动保存与撤销</h2>
+                <p>系统自动将所有数据存到浏览器本地，关了页面也不丢数据。支持 Ctrl+Z 撤销 / Ctrl+Y 重做。</p>
             </div>
 
-            <!-- ===================== 管理端手册.md ===================== -->
+            <!-- ===================== 管理端操作指南 ===================== -->
             <div class="doc-section">
-                <h1 id="admin-title">管理端操作手册</h1>
-                <p><strong>访问地址</strong>：<code>admin.html</code>（或在线地址 https://cleanroom1.netlify.app/admin.html）</p>
-                <p>管理端用来设置各洁净等级下每个检测项目的单价，设置完后发布给业务员使用。</p>
+                <h1 id="admin-title">管理端操作指南</h1>
+                <p>管理端用来设置各洁净等级下每个检测项目的单价。打开 <code>admin.html</code> 即可使用。</p>
 
-                <h2 id="admin-1">1. 数据同步区</h2>
-                <p>页面顶部有两个卡片：</p>
-                <p><strong>云端发布与同步区</strong>（左侧）：</p>
-                <ul>
-                    <li><strong>拉取云端数据</strong>：从 Gitee 仓库下载最新的价格配置，覆盖当前浏览器里的数据。适用于换电脑、或想撤回最近的修改。</li>
-                    <li><strong>发布至云端</strong>：把当前配置推送到 Gitee 仓库。推送后，业务员端会在下次轮询时自动获取更新。</li>
-                    <li>下方状态栏显示当前数据来源和版本时间。绿色表示有云端数据，橙色表示仅有本地数据。</li>
-                </ul>
-                <p><strong>离线配置包管理区</strong>（右侧）：</p>
-                <ul>
-                    <li><strong>导入本地数据</strong>：从 <code>.crm</code> 文件加载价格配置。</li>
-                    <li><strong>导出数据到本地</strong>：把当前配置导出为 <code>.crm</code>
-                        文件（文件名格式：<code>20260228单价同步包.crm</code>），可以线下发给业务员。</li>
-                </ul>
-
-                <h2 id="admin-2">2. 单价配置</h2>
+                <h2 id="admin-1">单价配置</h2>
                 <ol>
-                    <li>先从"配置目标级别"下拉框选择一个等级（如"10000级"）。</li>
+                    <li>从「配置目标级别」下拉框选择一个等级（如 10000级）</li>
                     <li>下方表格列出该等级下所有 14 个检测项目，每项有三列可填：
                         <ul>
                             <li><strong>阈值点数</strong>：阶梯计价的分界线</li>
-                            <li><strong>阈值内单价</strong>：低于等于阈值时的单价（元/点）</li>
-                            <li><strong>超阈值单价</strong>：超过阈值时的单价（元/点）</li>
+                            <li><strong>阈值内单价</strong>：点数总量 ≤ 阈值时的单价（元/点）</li>
+                            <li><strong>超阈值单价</strong>：点数总量 &gt; 阈值时的单价（元/点）</li>
                         </ul>
                     </li>
-                    <li>输入后自动保存到浏览器本地，不需要手动点保存。</li>
-                    <li>每列表头有"向下填充"按钮：把该列第一行的数值复制到该列所有行。</li>
+                    <li>输入后自动保存，不需要手动点保存按钮</li>
+                    <li>每列表头有「向下填充」按钮，把第一行数值复制到该列所有行</li>
                 </ol>
+                <h3 id="admin-1-test">测试用例：单价配置</h3>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>操作</th>
+                            <th>预期结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>选择「10000级」，在悬浮粒子行填入阈值 <code>10</code>、内单价 <code>500</code>、超单价 <code>300</code></td>
+                            <td>数据自动保存，刷新页面后数据仍在</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>点击阈值列的「向下填充」</td>
+                            <td>所有 14 行的阈值都变为第一行的值</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <h2 id="admin-3">3. 跨级别复制</h2>
-                <p>如果多个等级的定价方案相同，不需要逐个配置：</p>
-                <ol>
-                    <li>先选好一个等级并配置好价格。</li>
-                    <li>点击"复制当前配置到其它级别..."按钮。</li>
-                    <li>在弹窗中勾选要复制到的目标等级（可按分组全选）。</li>
-                    <li>点击"确认应用"，目标等级的配置会被覆盖为当前等级的配置。</li>
-                </ol>
+                <h2 id="admin-2">跨级别复制</h2>
+                <p>如果多个等级的定价方案相同，不用逐个配置：先配好一个等级 → 点击「复制当前配置到其它级别」→ 勾选目标等级 → 确认应用。</p>
+                <h3 id="admin-2-test">测试用例：跨级别复制</h3>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>操作</th>
+                            <th>预期结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>配好「10000级」后，点「复制当前配置到其它级别」</td>
+                            <td>弹出等级选择窗口</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>勾选「100000级」和「300000级」，确认</td>
+                            <td>切换到这两个等级后，价格与 10000级 完全一致</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <h2 id="admin-4">4. 发布流程</h2>
-                <p>配置完成并确认无误后：</p>
+                <h2 id="admin-3">发布与离线分发</h2>
+                <p>配置完成后有两种分发方式：</p>
                 <ul>
-                    <li>有网络：点击"发布至云端"，业务员端会自动同步。</li>
-                    <li>无网络：点击"导出数据到本地"，把 <code>.crm</code> 文件发给业务员。</li>
+                    <li><strong>有网络</strong>：点击「发布至云端」，业务员端会在下次轮询时自动获取更新</li>
+                    <li><strong>无网络</strong>：点击「导出数据到本地」，生成 <code>.crm</code> 文件发给业务员手动导入</li>
                 </ul>
             </div>
 
-            <!-- ===================== 八项新需求测试用例 ===================== -->
+            <!-- ===================== 点数计算规则与验证 ===================== -->
             <div class="doc-section">
-                <h1 id="test-title">八项需求测试用例</h1>
-                <p>本文档提供逐步操作指引，帮助您在浏览器中手动验证全部 8 项客户需求的实现效果。<strong>前置条件</strong>：双击 <code>index.html</code> 在浏览器中打开系统。
-                </p>
+                <h1 id="test-title">点数计算规则与验证</h1>
+                <p>以下是五种计算标准的详细规则说明和对应的测试用例。每组测试用例都可以在客户端直接操作验证。</p>
 
-                <h2 id="test-req1">需求 1：GB16292旧版 — 温湿度固定为 1</h2>
-                <p><strong>需求描述</strong>：选择 GB16292旧版 时，温湿度不论面积大小，始终为 1。</p>
+                <h2 id="test-old">GB16292 旧版</h2>
+                <p>选择此标准后，等级下拉框只显示 100级/10000级/100000级/300000级 四个选项。悬浮粒子和微生物按面积区间 + 级别查固定对照表。温湿度恒为 1，噪声以 15m² 为分界（不足 15
+                    为 1，达到 15 及以上为 5）。</p>
+                <h3 id="test-old-cases">测试用例</h3>
                 <table class="doc-table">
                     <thead>
                         <tr>
@@ -552,72 +654,35 @@
                     <tbody>
                         <tr>
                             <td>1</td>
-                            <td>将「点数执行标准」下拉框切换为 <strong>GB16292旧版</strong></td>
-                            <td>级别下拉框变为 100级/10000级/100000级/300000级</td>
+                            <td>标准选「GB16292旧版」</td>
+                            <td>等级变为 100级/10000级/100000级/300000级</td>
                         </tr>
                         <tr>
                             <td>2</td>
-                            <td>将房间面积改为 <strong>15</strong></td>
-                            <td>温湿度输入框显示 <strong>1</strong></td>
+                            <td>面积改为 <code>15</code></td>
+                            <td>温湿度 = <code>1</code></td>
                         </tr>
                         <tr>
                             <td>3</td>
-                            <td>将房间面积改为 <strong>200</strong></td>
-                            <td>温湿度输入框仍然显示 <strong>1</strong></td>
+                            <td>面积改为 <code>200</code></td>
+                            <td>温湿度 = <code>1</code>（任何面积都固定为 1）</td>
                         </tr>
                         <tr>
                             <td>4</td>
-                            <td>将房间面积改为 <strong>1000</strong></td>
-                            <td>温湿度输入框仍然显示 <strong>1</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p>✅ <strong>通过标准</strong>：无论面积如何变化，温湿度始终为 1。</p>
-
-                <h2 id="test-req2">需求 2：GB16292旧版 — 噪声≥15㎡为 5</h2>
-                <p><strong>需求描述</strong>：噪声面积达到 15 平方米时，检测点为 5；不足 15 平方米时为 1。</p>
-                <table class="doc-table">
-                    <thead>
-                        <tr>
-                            <th>步骤</th>
-                            <th>操作</th>
-                            <th>预期结果</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>保持标准为 <strong>GB16292旧版</strong></td>
-                            <td>—</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>将房间面积改为 <strong>14</strong></td>
-                            <td>噪声显示 <strong>1</strong></td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>将房间面积改为 <strong>15</strong></td>
-                            <td>噪声显示 <strong>5</strong>（这是关键边界值）</td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td>将房间面积改为 <strong>16</strong></td>
-                            <td>噪声显示 <strong>5</strong></td>
+                            <td>面积改为 <code>14</code></td>
+                            <td>噪声 = <code>1</code>（不足 15m²）</td>
                         </tr>
                         <tr>
                             <td>5</td>
-                            <td>将房间面积改为 <strong>100</strong></td>
-                            <td>噪声显示 <strong>5</strong></td>
+                            <td>面积改为 <code>15</code></td>
+                            <td>噪声 = <code>5</code>（15m² 是临界值）</td>
                         </tr>
                     </tbody>
                 </table>
-                <p>✅ <strong>通过标准</strong>：14㎡ 时噪声=1，15㎡ 及以上噪声=5。</p>
 
-                <h2 id="test-req3">需求 3：GB50591 — 新增附录 E.4.2-1 查表模式</h2>
-                <p><strong>需求描述</strong>：GB50591 标准下新增一种「查表法」点位计算方式，用户可在查表法与原有开根号法之间自由切换。</p>
-
-                <h3 id="test-req3-1">3.1 验证开关显示/隐藏</h3>
+                <h2 id="test-gb50591">GB 50591 施工验收</h2>
+                <p>默认用开根号法：悬浮粒子 = √面积 向上取整。可勾选「启用附录 E.4.2-1 查表模式」切换为按面积和级别查表。温湿度固定 1，噪声 ≥15m² 为 5，换气次数按面积分段计算。</p>
+                <h3 id="test-gb50591-cases">测试用例</h3>
                 <table class="doc-table">
                     <thead>
                         <tr>
@@ -629,261 +694,147 @@
                     <tbody>
                         <tr>
                             <td>1</td>
-                            <td>将标准切换为 <strong>GB 50591</strong></td>
-                            <td>标准下拉框右侧出现复选框「启用附录E.4.2-1查表模式」</td>
+                            <td>标准选「GB 50591」，确认查表模式<strong>未勾选</strong></td>
+                            <td>标准右侧出现查表模式复选框</td>
                         </tr>
                         <tr>
                             <td>2</td>
-                            <td>将标准切换为 <strong>ISO 14644-1</strong></td>
-                            <td>复选框消失</td>
+                            <td>面积改为 <code>50</code></td>
+                            <td>悬浮粒子 = <code>8</code>（√50 = 7.07 → 取整 8）</td>
                         </tr>
                         <tr>
                             <td>3</td>
-                            <td>将标准切换为 <strong>常规电子/工业 (国标)</strong></td>
-                            <td>复选框消失</td>
+                            <td><strong>勾选</strong>查表模式，级别选 6级，面积 <code>20</code></td>
+                            <td>悬浮粒子 = <code>6</code>（查表值）</td>
                         </tr>
                         <tr>
                             <td>4</td>
-                            <td>将标准切换回 <strong>GB 50591</strong></td>
-                            <td>复选框重新出现</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3 id="test-req3-2">3.2 验证开根号模式（默认）</h3>
-                <table class="doc-table">
-                    <thead>
-                        <tr>
-                            <th>步骤</th>
-                            <th>操作</th>
-                            <th>预期结果</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>保持 GB50591，确认查表模式<strong>未勾选</strong></td>
-                            <td>—</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>将面积改为 <strong>50</strong></td>
-                            <td>悬浮粒子 = <strong>8</strong>（√50 = 7.07 → 向上取整 = 8）</td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>将面积改为 <strong>100</strong></td>
-                            <td>悬浮粒子 = <strong>10</strong>（√100 = 10）</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3 id="test-req3-3">3.3 验证查表模式</h3>
-                <table class="doc-table">
-                    <thead>
-                        <tr>
-                            <th>步骤</th>
-                            <th>操作</th>
-                            <th>预期结果</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td><strong>勾选</strong>「启用附录E.4.2-1查表模式」</td>
-                            <td>—</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>将级别选为 <strong>6级</strong>（或 1000级），面积 <strong>20</strong></td>
-                            <td>悬浮粒子 = <strong>6</strong></td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>将级别选为 <strong>5级</strong>（或 100级），面积 <strong>20</strong></td>
-                            <td>悬浮粒子 = <strong>8</strong></td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td>将级别选为 <strong>7级</strong>（或 10000级），面积 <strong>100</strong></td>
-                            <td>悬浮粒子 = <strong>10</strong></td>
+                            <td>取消勾选查表模式，面积 <code>300</code></td>
+                            <td>温湿度 = <code>1</code>，噪声 = <code>5</code>，换气 = <code>15</code>（300÷20=15）</td>
                         </tr>
                         <tr>
                             <td>5</td>
-                            <td>将级别选为 <strong>8级</strong>，面积 <strong>200</strong></td>
-                            <td>悬浮粒子 = <strong>6</strong></td>
+                            <td>面积改为 <code>14</code></td>
+                            <td>噪声 = <code>1</code>（不足 15m²）</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <caption-box><strong>换气次数分段公式</strong>：面积 &lt;100 → 面积÷15 取整；100~199 → 面积÷17；200~399 → 面积÷20；≥400 →
+                    面积÷22</caption-box>
+
+                <h2 id="test-gb">常规电子/工业（GB）</h2>
+                <p>与 GB 50591 类似的开根号算法，但<strong>自动隐藏浮游菌和沉降菌</strong>（工业场景不需要测微生物）。换气次数同样按面积分段公式计算。</p>
+                <h3 id="test-gb-cases">测试用例</h3>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>操作</th>
+                            <th>预期结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>标准选「常规电子/工业 (国标)」</td>
+                            <td>浮游菌、沉降菌项目被隐藏</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>面积改为 <code>200</code></td>
+                            <td>换气 = <code>10</code>（200÷20=10）</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>面积改为 <code>100</code></td>
+                            <td>换气 = <code>6</code>（100÷17=5.88→6）</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2 id="test-iso">ISO 14644-1 国际标准</h2>
+                <p>悬浮粒子按 ISO 规定的面积-点数对照表查表（非开根号）。温湿度固定 1，噪声 ≥15m² 为 5，换气和照度对齐旧版算法。</p>
+                <h3 id="test-iso-cases">测试用例</h3>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>操作</th>
+                            <th>预期结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>标准选「ISO 14644-1」，面积 <code>200</code></td>
+                            <td>换气 = <code>10</code>，温湿度 = <code>1</code>，噪声 = <code>5</code>，照度 = <code>50</code></td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>面积改为 <code>14</code></td>
+                            <td>噪声 = <code>1</code>（不足 15m²），照度 = <code>2</code>（≤20m² 固定 2）</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>面积改为 <code>50</code></td>
+                            <td>换气 = <code>4</code>（50÷15=3.33→4），照度 = <code>13</code>（50÷4=12.5→13）</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <caption-box><strong>照度公式</strong>：面积 ≤ 20m² 固定返回 2，超过 20m² 则 面积÷4 向上取整</caption-box>
+
+                <h2 id="test-gb50333">GB 50333 医院洁净手术部</h2>
+                <p>选择此标准后，等级下拉框变为 I级/II级/III级/IV级。I~III 级的悬浮粒子和微生物采用固定点位数；IV 级降级处理，用√面积取整。</p>
+                <h3 id="test-gb50333-cases">测试用例</h3>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>操作</th>
+                            <th>预期结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>标准选「GB 50333」</td>
+                            <td>等级变为 I级/II级/III级/IV级</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>级别选 I级，面积 <code>50</code></td>
+                            <td>悬浮粒子 = <code>13</code>，浮游菌 = <code>13</code>，沉降菌 = <code>13</code>（固定值）</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>级别选 II级，面积 <code>50</code></td>
+                            <td>悬浮粒子 = <code>9</code>，浮游菌 = <code>9</code>，沉降菌 = <code>9</code></td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>级别选 III级，面积 <code>50</code></td>
+                            <td>悬浮粒子 = <code>7</code>，浮游菌 = <code>7</code>，沉降菌 = <code>7</code></td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>级别选 IV级，面积 <code>50</code></td>
+                            <td>悬浮粒子 = <code>8</code>（√50→8，降级为开方计算）</td>
                         </tr>
                         <tr>
                             <td>6</td>
-                            <td>将级别选为 <strong>5级</strong>，面积 <strong>5</strong></td>
-                            <td>悬浮粒子 = <strong>3</strong></td>
+                            <td>保持 GB50333，面积 <code>50</code></td>
+                            <td>温湿度 = <code>1</code>，噪声 = <code>5</code>，换气 = <code>4</code></td>
                         </tr>
                     </tbody>
                 </table>
-                <p>✅ <strong>通过标准</strong>：开关显隐正常，两种模式计算值均正确。</p>
 
-                <h2 id="test-req4">需求 4：GB50591 — 温湿度/噪声/换气对齐旧版</h2>
-                <p><strong>需求描述</strong>：GB50591 下温湿度固定为 1，噪声≥15㎡为 5，换气次数参考旧版 16292 面积分段公式。</p>
-                <table class="doc-table">
-                    <thead>
-                        <tr>
-                            <th>步骤</th>
-                            <th>操作</th>
-                            <th>预期结果</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>标准选 <strong>GB 50591</strong>，取消勾选查表模式</td>
-                            <td>—</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>面积改为 <strong>15</strong></td>
-                            <td>温湿度 = <strong>1</strong>，噪声 = <strong>5</strong>，换气 = <strong>1</strong></td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>面积改为 <strong>300</strong></td>
-                            <td>温湿度 = <strong>1</strong>，噪声 = <strong>5</strong>，换气 = <strong>15</strong>（300÷20）</td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td>面积改为 <strong>50</strong></td>
-                            <td>温湿度 = <strong>1</strong>，噪声 = <strong>5</strong>，换气 = <strong>4</strong>（50÷15）</td>
-                        </tr>
-                        <tr>
-                            <td>5</td>
-                            <td>面积改为 <strong>14</strong></td>
-                            <td>噪声 = <strong>1</strong>（不足15㎡）</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p>✅ <strong>通过标准</strong>：温湿度恒为 1，噪声以 15㎡ 为界，换气随面积分段变化。</p>
-
-                <h2 id="test-req5">需求 5：常规电子/工业（GB） — 换气次数参考旧版 16292</h2>
-                <p><strong>需求描述</strong>：换气次数不再固定为 1，改为参考旧版 16292 面积分段算法。</p>
-                <table class="doc-table">
-                    <thead>
-                        <tr>
-                            <th>步骤</th>
-                            <th>操作</th>
-                            <th>预期结果</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>标准切换为 <strong>常规电子/工业 (国标)</strong></td>
-                            <td>—</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>面积改为 <strong>30</strong></td>
-                            <td>换气 = <strong>2</strong>（30÷15）</td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>面积改为 <strong>100</strong></td>
-                            <td>换气 = <strong>6</strong>（100÷17）</td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td>面积改为 <strong>200</strong></td>
-                            <td>换气 = <strong>10</strong>（200÷20）</td>
-                        </tr>
-                        <tr>
-                            <td>5</td>
-                            <td>面积改为 <strong>500</strong></td>
-                            <td>换气 = <strong>23</strong>（500÷22）</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p>✅ <strong>通过标准</strong>：换气随面积动态变化，不再固定为 1。</p>
-
-                <h2 id="test-req6">需求 6：ISO 14644-1 — 换气/温湿度/噪声/照度全面调整</h2>
-                <p><strong>需求描述</strong>：ISO 标准下，四大常规参数对齐旧版 GB16292 算法。</p>
-                <table class="doc-table">
-                    <thead>
-                        <tr>
-                            <th>步骤</th>
-                            <th>操作</th>
-                            <th>预期结果</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>标准切换为 <strong>ISO 14644-1 (国际标准)</strong></td>
-                            <td>—</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>面积改为 <strong>50</strong></td>
-                            <td>换气 = <strong>4</strong>，温湿度 = <strong>1</strong>，噪声 = <strong>5</strong>，照度 =
-                                <strong>13</strong></td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>面积改为 <strong>14</strong></td>
-                            <td>噪声 = <strong>1</strong>，照度 = <strong>2</strong>（≤20㎡固定2）</td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td>面积改为 <strong>200</strong></td>
-                            <td>换气 = <strong>10</strong>，温湿度 = <strong>1</strong>，噪声 = <strong>5</strong>，照度 =
-                                <strong>50</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p>✅ <strong>通过标准</strong>：换气、温湿度、噪声、照度四项均按旧版逻辑正确计算。</p>
-
-                <h2 id="test-req7">需求 7：新增 6 条检测/评价依据</h2>
-                <p><strong>需求描述</strong>：在检测依据和评价依据的多选列表中，新增 6 条标准规程。</p>
-                <p>包含：GB 50687、GB 15979、GB 29923、DB32/T 972、DB32/T 2730、中华人民共和国药典（2025年版）。</p>
-                <p>✅ <strong>通过标准</strong>：这 6 条均正常挂载，同时老的 2020 年版本得以保留。</p>
-
-                <h2 id="test-req8">需求 8：新增 GB50333 医院洁净手术部算法</h2>
-                <p><strong>需求描述</strong>：新增 GB 50333 标准选项，采用医院手术室 I~IV 级固定点位算法。</p>
-                <h3 id="test-req8-1">8.1 验证点位算法及联动</h3>
-                <table class="doc-table">
-                    <thead>
-                        <tr>
-                            <th>步骤</th>
-                            <th>操作</th>
-                            <th>预期结果</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>选择 <strong>GB 50333</strong></td>
-                            <td>洁净度变为 I级 / II级 / III级 / IV级</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>选择 <strong>I级</strong>，面积 <strong>50</strong></td>
-                            <td>悬浮粒子 = <strong>13</strong>，浮游菌 = <strong>13</strong>，沉降菌 = <strong>13</strong></td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>选择 <strong>II级</strong>，面积 <strong>50</strong></td>
-                            <td>悬浮粒子 = <strong>9</strong>，浮游菌 = <strong>9</strong>，沉降菌 = <strong>9</strong></td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td>选择 <strong>III级</strong>，面积 <strong>50</strong></td>
-                            <td>悬浮粒子 = <strong>7</strong>，浮游菌 = <strong>7</strong>，沉降菌 = <strong>7</strong></td>
-                        </tr>
-                        <tr>
-                            <td>5</td>
-                            <td>选择 <strong>IV级</strong>，面积 <strong>50</strong></td>
-                            <td>悬浮粒子 = <strong>8</strong>（降级处理：√50→8）</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p>✅ <strong>通过标准</strong>：GB50333 选项正常显示，I/II/III 级固定点位正确，IV 级降级处理正确，其他参数对齐旧版逻辑。</p>
+                <h2 id="test-regression">综合回归验证</h2>
+                <p>完成上述测试后，还需确认：</p>
+                <ol>
+                    <li>在各标准间来回切换时，之前的功能没有被破坏</li>
+                    <li>切换标准后，查表模式开关只在 GB 50591 下显示</li>
+                    <li>等级下拉框在非 GB16292旧版 / 非 GB50333 时恢复为全部 18 个等级</li>
+                </ol>
             </div>
 
             <div style="height: 200px;"></div>
@@ -897,7 +848,7 @@
             const headings = scrollArea.querySelectorAll('h1, h2, h3');
             let tocHTML = '';
 
-            // 构建真·树状大纲
+            // 构建树状大纲
             let treeData = [];
             let lastH1 = null;
             let lastH2 = null;
@@ -993,68 +944,20 @@
             tocLinks.forEach(link => {
                 link.addEventListener('click', () => {
                     isClickScrolling = true;
-                    setTimeout(() => isClickScrolling = false, 1000); // 防抖
+                    setTimeout(() => isClickScrolling = false, 1000);
 
                     tocLinks.forEach(l => l.classList.remove('active'));
                     link.classList.add('active');
                 });
             });
 
-            // 监听 h1, h2, h3 元素与顶部的交叉位置
-            const observerOptions = {
-                root: scrollArea,
-                rootMargin: "0px 0px -70% 0px", // 只要进入视窗上部 30% 就算激活
-                threshold: 0
-            };
-
-            const headingElements = Array.from(headings);
-
-            const observer = new IntersectionObserver(entries => {
-                if (isClickScrolling) return;
-
-                // 我们将可视区域定在视区上方
-                let activeId = null;
-
-                // 找出当前在视口中的或者是刚滚过视口顶部的最近一个
-                // 更简单的做法是：遍历所有 heading，看哪一个距离 root 顶部的 top 值最小（但为负或接近 0）
-
-                let minAbove = -Infinity;
-                let activeHeading = headingElements[0];
-
-                headingElements.forEach(h => {
-                    const rect = h.getBoundingClientRect();
-                    const containerRect = scrollArea.getBoundingClientRect();
-                    // 计算相对容器顶部的偏移
-                    const offsetTop = rect.top - containerRect.top;
-
-                    // 我们想要的是在视线范围内的最近的那个 heading (比如偏移 <= 60px)
-                    if (offsetTop <= 60 && offsetTop > minAbove) {
-                        minAbove = offsetTop;
-                        activeHeading = h;
-                    }
-                });
-
-                if (activeHeading) {
-                    tocLinks.forEach(link => {
-                        link.classList.remove('active');
-                        if (link.getAttribute('href') === '#' + activeHeading.id) {
-                            link.classList.add('active');
-                            // 将左侧菜单稍微平滑滚动，使高亮保持在视图中
-                            link.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        }
-                    });
-                }
-            }, observerOptions);
-
-            // 监听滚动事件实时计算（因为 IntersectionObserver 有时不够精确，此处我们同时使用了监听所有heading，
-            // 但其实用 scroll 事件直接找最近元素更像大厂文档。上面通过 observer 的逻辑触发 scroll）
-            // 这里用 scroll 事件代理
             let scrollTimeout;
             scrollArea.addEventListener('scroll', () => {
                 if (isClickScrolling) return;
                 if (scrollTimeout) clearTimeout(scrollTimeout);
 
                 scrollTimeout = setTimeout(() => {
+                    const headingElements = Array.from(headings);
                     let minAbove = -Infinity;
                     let activeHeading = headingElements[0];
 
@@ -1063,7 +966,6 @@
                         const containerRect = scrollArea.getBoundingClientRect();
                         const offsetTop = rect.top - containerRect.top;
 
-                        // 为了应对不同分辨率，我们将激活范围设为距离顶部 100px 以内
                         if (offsetTop <= 100 && offsetTop > minAbove) {
                             minAbove = offsetTop;
                             activeHeading = h;
@@ -1079,7 +981,7 @@
                             }
                         });
                     }
-                }, 50); // 防抖 50ms
+                }, 50);
             });
         });
     </script>
