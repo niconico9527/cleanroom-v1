@@ -465,7 +465,9 @@ function addRoom(importName = '', importLevel = '', importArea = '') {
         <td class="config-cell">
             ${regularHtml}
             ${specialHtml}
-            <div class="collapsed-summary"></div>
+            <div class="collapsed-summary">
+                <!-- 动态 summary-pill 内容由 calculateAll 注入，但我们需要把编辑按钮固化在这里 -->
+            </div>
         </td>
         <td><span class="room-total-text">¥ 0.00</span></td>
         <td><button class="btn btn-danger" onclick="removeRoom('${tr.id}')">删除</button></td>
@@ -489,18 +491,7 @@ function addRoom(importName = '', importLevel = '', importArea = '') {
     handleStandardChange();
 }
 
-// 展开/折叠全部明细逻辑
-let allRoomsCollapsed = false;
-function toggleAllRoomsCollapse() {
-    allRoomsCollapsed = !allRoomsCollapsed;
-    document.querySelectorAll('.room-group').forEach(row => {
-        if (allRoomsCollapsed) {
-            row.classList.add('collapsed');
-        } else {
-            row.classList.remove('collapsed');
-        }
-    });
-}
+// (已移除展开/折叠功能，转为弹窗编辑)
 
 function removeRoom(rowId) {
     const tr = document.getElementById(rowId);
@@ -853,13 +844,17 @@ function calculateAll() {
                         name: itemName,
                         pts: itemPts
                     });
-                    summaryHtml += `<span class="summary-pill">${itemName}: <b>${itemPts}</b>点</span>`;
+                    // 胶囊只显示数字，点击开启弹窗并聚焦到对应项
+                    summaryHtml += `<span class="summary-pill" onclick="openEditDetailsModal('${rt.tr.id}','${p.key}')">${itemName}: <b>${itemPts}</b>点</span>`;
                 }
             });
 
             if (summaryHtml === '') {
                 summaryHtml = '<span class="summary-pill empty-pill">(未选任何项目)</span>';
             }
+
+            summaryHtml += `<button class="edit-config-btn" onclick="openEditDetailsModal('${rt.tr.id}')" title="编辑详情"><i class="ph ph-note-pencil"></i></button>`;
+
             const summaryDiv = rt.tr.querySelector('.collapsed-summary');
             if (summaryDiv) summaryDiv.innerHTML = summaryHtml;
 
@@ -1214,3 +1209,243 @@ document.addEventListener('keydown', function (e) {
         redo();
     }
 });
+
+// ================================================================
+// 编辑详情弹窗逻辑（复选框 + 数值输入）
+// ================================================================
+let currentEditingRowId = null;
+
+function openEditDetailsModal(rowId, focusKey) {
+    currentEditingRowId = rowId;
+    const tr = document.getElementById(rowId);
+    if (!tr) return;
+
+    const modal = document.getElementById('editDetailsModal');
+    const body = document.getElementById('editDetailsBody');
+    body.innerHTML = '';
+
+    function renderItemRow(item) {
+        const chk = tr.querySelector(`.chk-${item.key}`);
+        const input = tr.querySelector(`.in-${item.key}`);
+        let isMicro = item.isMicro ? 'cell-microbio' : '';
+        let isHidden = chk.closest('.item-box').classList.contains('hidden-col') ? 'hidden-col' : '';
+        let checked = chk.checked ? 'checked' : '';
+        let val = input.value;
+
+        return `
+            <div class="modal-item-row ${isMicro} ${isHidden}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border-light); gap: 12px;">
+                <label class="item-label" style="flex: 1; margin: 0; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" id="modal_chk_${item.key}" ${checked} onchange="toggleModalInput('${item.key}')">
+                    ${item.name}
+                </label>
+                <input type="number" id="modal_in_${item.key}" value="${val}" 
+                    style="width: 60px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-size: 13px; font-weight: 600; outline: none; transition: border-color 0.2s; ${checked ? '' : 'opacity: 0.3; pointer-events: none;'}"
+                    onfocus="this.style.borderColor='var(--primary)'"
+                    onblur="this.style.borderColor='var(--border-color)'">
+                <span style="font-size: 12px; color: var(--text-faint);">点</span>
+            </div>
+        `;
+    }
+
+    let regularHtml = `<h4 style="margin-top: 0; margin-bottom: 0; font-size: 13px; font-weight: 600; color: var(--text-faint); padding: 8px 12px; background: var(--bg-muted); border-bottom: 1px solid var(--border-color);">常规项目</h4>`;
+    regularItems.forEach(item => { regularHtml += renderItemRow(item); });
+
+    let specialHtml = `<h4 style="margin-top: 0; margin-bottom: 0; font-size: 13px; font-weight: 600; color: var(--text-faint); padding: 8px 12px; background: var(--bg-muted); border-bottom: 1px solid var(--border-color);">特殊项目</h4>`;
+    specialItems.forEach(item => { specialHtml += renderItemRow(item); });
+
+    body.innerHTML = regularHtml + specialHtml;
+
+    modal.style.display = 'flex';
+
+    // 如果通过胶囊点击进来，自动聚焦到对应的输入框
+    if (focusKey) {
+        setTimeout(() => {
+            const targetInput = document.getElementById(`modal_in_${focusKey}`);
+            if (targetInput) {
+                targetInput.focus();
+                targetInput.select();
+            }
+        }, 100);
+    }
+}
+
+function toggleModalInput(key) {
+    const chk = document.getElementById(`modal_chk_${key}`);
+    const input = document.getElementById(`modal_in_${key}`);
+    if (chk && input) {
+        if (chk.checked) {
+            input.style.opacity = '1';
+            input.style.pointerEvents = 'auto';
+        } else {
+            input.style.opacity = '0.3';
+            input.style.pointerEvents = 'none';
+        }
+    }
+}
+
+function handleModalManualEdit(inputElement) {
+    if (inputElement.value === '') {
+        inputElement.dataset.locked = "false";
+        inputElement.classList.remove('manual-point');
+        inputElement.classList.add('auto-point');
+    } else {
+        inputElement.dataset.locked = "true";
+        inputElement.classList.remove('auto-point');
+        inputElement.classList.add('manual-point');
+    }
+}
+
+function closeEditDetailsModal() {
+    document.getElementById('editDetailsModal').style.display = 'none';
+    currentEditingRowId = null;
+}
+
+function saveEditDetails() {
+    if (!currentEditingRowId) return;
+    const tr = document.getElementById(currentEditingRowId);
+    if (!tr) return;
+
+    pushUndoState();
+
+    // 同步 checkbox 和数值
+    testItems.forEach(item => {
+        const modalChk = document.getElementById(`modal_chk_${item.key}`);
+        const modalIn = document.getElementById(`modal_in_${item.key}`);
+        const rowChk = tr.querySelector(`.chk-${item.key}`);
+        const rowIn = tr.querySelector(`.in-${item.key}`);
+
+        if (modalChk && rowChk) {
+            rowChk.checked = modalChk.checked;
+        }
+        if (modalIn && rowIn) {
+            rowIn.value = modalIn.value;
+            if (modalIn.value !== '') {
+                rowIn.dataset.locked = "true";
+                rowIn.classList.remove('auto-point');
+                rowIn.classList.add('manual-point');
+            }
+        }
+    });
+
+    closeEditDetailsModal();
+    calculateAll();
+}
+
+// ================================================================
+// 批量生成弹窗逻辑
+// ================================================================
+function openBatchAddModal() {
+    const modal = document.getElementById('batchAddModal');
+
+    // 渲染下拉等级
+    const levelSelect = document.getElementById('batchRoomLevel');
+    levelSelect.innerHTML = '';
+
+    const currentStd = document.getElementById('standardSelect') ? document.getElementById('standardSelect').value : 'ISO';
+    let allowedLevels;
+    if (currentStd === 'GB16292_OLD') {
+        allowedLevels = ["100级", "10000级", "100000级", "300000级"];
+    } else if (currentStd === 'GB50333') {
+        allowedLevels = ["I级", "II级", "III级", "IV级"];
+    } else {
+        allowedLevels = combinedLevels;
+    }
+
+    allowedLevels.forEach(lvl => {
+        const opt = document.createElement('option');
+        opt.value = lvl;
+        opt.text = lvl;
+        levelSelect.appendChild(opt);
+    });
+
+    // 渲染预设包含项目复选框
+    const grid = document.getElementById('batchItemPresetGrid');
+    let gridHtml = '';
+    // 默认勾选几个常规项目
+    const defaultChecked = ['particle', 'pressure', 'air', 'temphum'];
+
+    testItems.forEach(item => {
+        let isMicro = item.isMicro ? 'cell-microbio' : '';
+        // 简单处理隐藏列逻辑，这里偷懒用现成的标准判断
+        let isHidden = (currentStd === 'GB' && item.isMicro) ? 'hidden-col' : '';
+        let checked = defaultChecked.includes(item.key) ? 'checked' : '';
+
+        gridHtml += `
+            <div class="item-box ${isMicro} ${isHidden}" style="padding: 10px; flex-direction: row; justify-content: space-between; align-items: center;">
+                <label class="item-label">
+                    <input type="checkbox" id="batch_chk_${item.key}" ${checked}>
+                    ${item.name}
+                </label>
+                <input type="number" id="batch_in_${item.key}" class="batch-pt-input" title="可缺省，空白走国标自动算">
+            </div>
+        `;
+    });
+    grid.innerHTML = gridHtml;
+
+    // 初始化数值
+    document.getElementById('batchRoomPrefix').value = "房间";
+    document.getElementById('batchRoomCount').value = "5";
+    document.getElementById('batchRoomArea').value = "50";
+
+    modal.style.display = 'flex';
+}
+
+function closeBatchAddModal() {
+    document.getElementById('batchAddModal').style.display = 'none';
+}
+
+function executeBatchAdd() {
+    const prefix = document.getElementById('batchRoomPrefix').value.trim() || "房间";
+    const count = parseInt(document.getElementById('batchRoomCount').value) || 5;
+    const initialLevel = document.getElementById('batchRoomLevel').value;
+    const initialArea = parseFloat(document.getElementById('batchRoomArea').value) || 50;
+
+    if (count <= 0 || count > 100) {
+        alert("请输入有效的生成数量 (1 - 100 之间)");
+        return;
+    }
+
+    // 读取期望勾选的预设项目和自定义设定点数
+    let presetChecks = {};
+    let presetPts = {};
+
+    testItems.forEach(item => {
+        const chk = document.getElementById(`batch_chk_${item.key}`);
+        const pin = document.getElementById(`batch_in_${item.key}`);
+        if (chk) {
+            presetChecks[item.key] = chk.checked;
+        }
+        if (pin && pin.value !== "") {
+            presetPts[item.key] = pin.value;
+        }
+    });
+
+    pushUndoState();
+
+    // 批量生成
+    for (let i = 1; i <= count; i++) {
+        let roomName = `${prefix}${i}`;
+        addRoom(roomName, initialLevel, initialArea);
+
+        // 找到最新生成的那一行，应用预设配置
+        const allRooms = document.querySelectorAll('.room-group');
+        const newRow = allRooms[allRooms.length - 1];
+        if (newRow) {
+            testItems.forEach(item => {
+                const rowChk = newRow.querySelector(`.chk-${item.key}`);
+                const rowIn = newRow.querySelector(`.in-${item.key}`);
+
+                if (rowChk) {
+                    rowChk.checked = presetChecks[item.key] || false;
+                }
+                if (rowIn && presetPts[item.key] !== undefined && rowChk.checked) {
+                    rowIn.value = presetPts[item.key];
+                    handleModalManualEdit(rowIn);
+                }
+            });
+        }
+    }
+
+    closeBatchAddModal();
+    calculateAll();
+}
