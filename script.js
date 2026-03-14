@@ -311,6 +311,10 @@ function handleStandardChange() {
     const isGB50333 = (std === 'GB50333');
     const isGB50591 = (std === 'GB50591');
 
+    // 检测是否真的发生了标准切换
+    const isStandardChanged = (window._currentStd !== std);
+    window._currentStd = std;
+
     // 需求3：控制 GB50591 查表模式开关的显示/隐藏
     const tableLabel = document.getElementById('gb50591TableLabel');
     if (tableLabel) {
@@ -328,10 +332,12 @@ function handleStandardChange() {
         const cb = cell.querySelector('input[type="checkbox"]');
         if (isPureGB) {
             cell.classList.add('hidden-col');
-            if (cb) cb.checked = false;
+            // 仅在真实切换标准时强制重置，避免因为新增房间调用此方法毁掉用户的自定义勾选
+            if (isStandardChanged && cb) cb.checked = false;
         } else {
             cell.classList.remove('hidden-col');
-            if (cb && (cb.classList.contains('chk-planktonic') || cb.classList.contains('chk-settling'))) {
+            // 同上，仅在真实切换标准时为了安全起见默认勾选浮游沉降菌
+            if (isStandardChanged && cb && (cb.classList.contains('chk-planktonic') || cb.classList.contains('chk-settling'))) {
                 cb.checked = true;
             }
         }
@@ -835,7 +841,7 @@ function calculateAll() {
 
         if (rt.area > 0) {
             let items = [];
-            let summaryHtml = '';
+            let summaryParts = [];
             paramsMap.forEach(p => {
                 if (rt.roomChecks[p.key]) {
                     const itemName = testItems.find(t => t.key === p.key).name;
@@ -844,16 +850,17 @@ function calculateAll() {
                         name: itemName,
                         pts: itemPts
                     });
-                    // 胶囊只显示数字，点击开启弹窗并聚焦到对应项
-                    summaryHtml += `<span class="summary-pill" onclick="openEditDetailsModal('${rt.tr.id}','${p.key}')">${itemName}: <b>${itemPts}</b>点</span>`;
+                    summaryParts.push(`<span class="config-tag" onclick="openEditDetailsModal('${rt.tr.id}','${p.key}')">${itemName} <span class="tag-val">${itemPts}</span></span>`);
                 }
             });
 
-            if (summaryHtml === '') {
-                summaryHtml = '<span class="summary-pill empty-pill">(未选任何项目)</span>';
+            if (summaryParts.length === 0) {
+                summaryHtml = '<span class="config-tag-empty">未选任何项目</span>';
+            } else {
+                summaryHtml = summaryParts.join('<span class="config-tag-sep">·</span>');
             }
 
-            summaryHtml += `<button class="edit-config-btn" onclick="openEditDetailsModal('${rt.tr.id}')" title="编辑详情"><i class="ph ph-note-pencil"></i></button>`;
+            summaryHtml += `<button class="edit-config-btn" onclick="openEditDetailsModal('${rt.tr.id}')" title="编辑检测项目与点数"><i class="ph ph-pencil-simple"></i> 编辑</button>`;
 
             const summaryDiv = rt.tr.querySelector('.collapsed-summary');
             if (summaryDiv) summaryDiv.innerHTML = summaryHtml;
@@ -1000,19 +1007,16 @@ function clearAllData() {
     pushUndoState();
 
     document.getElementById('industrySelect').selectedIndex = 0;
-    document.getElementById('standardSelect').selectedIndex = 0;
-    document.getElementById('discountFactor').value = "1.0";
-
-    const checkboxes = document.querySelectorAll('.basis-container input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = false);
-    const customInputs = document.querySelectorAll('.basis-custom-txt');
-    customInputs.forEach(input => input.value = '');
-
-    document.getElementById('roomBody').innerHTML = '';
-    roomCount = 0;
-
-    addRoom();
-    handleStandardChange();
+    if (confirm("确定要清空所有房间和数据吗？")) {
+        pushUndoState();
+        document.getElementById('roomBody').innerHTML = '';
+        roomCount = 0;
+        calculateAll();
+        // 如果想要彻底清空并在空的时候显示提示，可以在 calculateAll 里处理
+        // 或者保留一行空白的体验更好：
+        // addRoom(); 
+        // 但既然你希望完全清空，这里我就移除原有保留一行的代码
+    }
 }
 
 // === 草稿箱核心逻辑与 Toast 提醒 ===
@@ -1224,6 +1228,20 @@ function openEditDetailsModal(rowId, focusKey) {
     const body = document.getElementById('editDetailsBody');
     body.innerHTML = '';
 
+    const area = parseFloat(tr.querySelector('.room-area').value) || 0;
+    const roomLevel = tr.querySelector('.room-level').value;
+    const standard = document.getElementById('standardSelect').value;
+    const rule = calcRules[standard];
+    const pMap = [
+        { key: 'particle', ruleKey: 'particle' }, { key: 'pressure', ruleKey: 'pressure' },
+        { key: 'air', ruleKey: 'air' }, { key: 'temphum', ruleKey: 'temphum' },
+        { key: 'noise', ruleKey: 'noise' }, { key: 'lux', ruleKey: 'lux' },
+        { key: 'planktonic', ruleKey: 'microbio' }, { key: 'settling', ruleKey: 'microbio' },
+        { key: 'vibration', ruleKey: 'fixed' }, { key: 'recovery', ruleKey: 'fixed' },
+        { key: 'airflow', ruleKey: 'fixed' }, { key: 'leakage', ruleKey: 'fixed' },
+        { key: 'uv', ruleKey: 'fixed' }, { key: 'surface', ruleKey: 'fixed' }
+    ];
+
     function renderItemRow(item) {
         const chk = tr.querySelector(`.chk-${item.key}`);
         const input = tr.querySelector(`.in-${item.key}`);
@@ -1232,28 +1250,47 @@ function openEditDetailsModal(rowId, focusKey) {
         let checked = chk.checked ? 'checked' : '';
         let val = input.value;
 
+        let pInfo = pMap.find(p => p.key === item.key);
+        let defaultValHtml = '';
+        if (pInfo && input.dataset.locked === "true" && area > 0) {
+            let defaultPts = rule[pInfo.ruleKey](area, roomLevel);
+            defaultValHtml = `<span style="font-size: 11px; color: var(--warning); margin-left: auto;">(默认: ${defaultPts})</span>`;
+        }
+
         return `
-            <div class="modal-item-row ${isMicro} ${isHidden}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border-light); gap: 12px;">
-                <label class="item-label" style="flex: 1; margin: 0; display: flex; align-items: center; gap: 6px;">
+            <div class="modal-item-row ${isMicro} ${isHidden}" style="display: flex; align-items: center; padding: 6px 0; gap: 8px;">
+                <label class="item-label" style="flex: 1; margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px;">
                     <input type="checkbox" id="modal_chk_${item.key}" ${checked} onchange="toggleModalInput('${item.key}')">
                     ${item.name}
                 </label>
+                ${defaultValHtml}
                 <input type="number" id="modal_in_${item.key}" value="${val}" 
-                    style="width: 60px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-size: 13px; font-weight: 600; outline: none; transition: border-color 0.2s; ${checked ? '' : 'opacity: 0.3; pointer-events: none;'}"
+                    style="width: 50px; padding: 3px 6px; border: 1px solid var(--border-color); border-radius: 0; text-align: center; font-size: 13px; font-weight: 600; outline: none; transition: border-color 0.2s; ${checked ? '' : 'opacity: 0.3; pointer-events: none;'}"
                     onfocus="this.style.borderColor='var(--primary)'"
                     onblur="this.style.borderColor='var(--border-color)'">
-                <span style="font-size: 12px; color: var(--text-faint);">点</span>
+                <span style="font-size: 12px; color: var(--text-faint); min-width: 14px;">点</span>
             </div>
         `;
     }
 
-    let regularHtml = `<h4 style="margin-top: 0; margin-bottom: 0; font-size: 13px; font-weight: 600; color: var(--text-faint); padding: 8px 12px; background: var(--bg-muted); border-bottom: 1px solid var(--border-color);">常规项目</h4>`;
+    let regularHtml = '';
     regularItems.forEach(item => { regularHtml += renderItemRow(item); });
 
-    let specialHtml = `<h4 style="margin-top: 0; margin-bottom: 0; font-size: 13px; font-weight: 600; color: var(--text-faint); padding: 8px 12px; background: var(--bg-muted); border-bottom: 1px solid var(--border-color);">特殊项目</h4>`;
+    let specialHtml = '';
     specialItems.forEach(item => { specialHtml += renderItemRow(item); });
 
-    body.innerHTML = regularHtml + specialHtml;
+    body.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px;">
+            <div>
+                <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: var(--text-faint); padding: 6px 0; border-bottom: 1px solid var(--border-color);">常规项目</h4>
+                ${regularHtml}
+            </div>
+            <div>
+                <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: var(--text-faint); padding: 6px 0; border-bottom: 1px solid var(--border-color);">特殊项目</h4>
+                ${specialHtml}
+            </div>
+        </div>
+    `;
 
     modal.style.display = 'flex';
 
@@ -1361,8 +1398,18 @@ function openBatchAddModal() {
     // 渲染预设包含项目复选框
     const grid = document.getElementById('batchItemPresetGrid');
     let gridHtml = '';
-    // 默认勾选几个常规项目
-    const defaultChecked = ['particle', 'pressure', 'air', 'temphum'];
+
+    // 根据当前标准动态决定默认勾选项
+    const std = document.getElementById('standardSelect').value;
+    const isPureGB = (std === 'GB');
+
+    // 默认勾选 6 个常规项目（与 addRoom 行为一致）
+    let defaultChecked = ['particle', 'pressure', 'air', 'temphum', 'noise', 'lux'];
+    if (!isPureGB) {
+        // 非 GB 标准额外增加浮游菌和沉降菌
+        defaultChecked.push('planktonic');
+        defaultChecked.push('settling');
+    }
 
     testItems.forEach(item => {
         let isMicro = item.isMicro ? 'cell-microbio' : '';
@@ -1422,14 +1469,29 @@ function executeBatchAdd() {
 
     pushUndoState();
 
+    // 找到已有的最大编号
+    let maxNum = 0;
+    const existingNames = document.querySelectorAll('.room-name');
+    const regex = new RegExp(`^${prefix}(\\d+)$`);
+    existingNames.forEach(input => {
+        const match = input.value.trim().match(regex);
+        if (match) {
+            maxNum = Math.max(maxNum, parseInt(match[1], 10));
+        }
+    });
+
     // 批量生成
+    const newRows = [];
     for (let i = 1; i <= count; i++) {
-        let roomName = `${prefix}${i}`;
+        let roomName = `${prefix}${maxNum + i}`;
         addRoom(roomName, initialLevel, initialArea);
 
-        // 找到最新生成的那一行，应用预设配置
         const allRooms = document.querySelectorAll('.room-group');
-        const newRow = allRooms[allRooms.length - 1];
+        newRows.push(allRooms[allRooms.length - 1]);
+    }
+
+    // 所有行都生成完毕后，再统一应用预设配置
+    newRows.forEach(newRow => {
         if (newRow) {
             testItems.forEach(item => {
                 const rowChk = newRow.querySelector(`.chk-${item.key}`);
@@ -1444,7 +1506,7 @@ function executeBatchAdd() {
                 }
             });
         }
-    }
+    });
 
     closeBatchAddModal();
     calculateAll();
